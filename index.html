@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<!-- =========================================================
+     TIKLAMA OYUNU (CLICKER GAME) - TEK DOSYA
+     ---------------------------------------------------------
+     - Tıkladıkça puan artar
+     - 3 farklı yükseltme (upgrade) vardır
+     - Karanlık temalıdır
+     - Telefon ve bilgisayarda eşit görünmesi için responsive'tir
+     - Tüm kod (HTML + CSS + JavaScript) bu tek dosyanın içindedir
+     ========================================================== -->
+<html lang="tr">
+<head>
+    <!-- Sayfanın dilini Türkçe olarak ayarlar -->
+    <meta charset="UTF-8">
+
+    <!-- viewport: Telefonlarda sayfanın doğru ölçeklenmesini sağlar.
+         width=device-width -> ekran genişliğine uy
+         initial-scale=1.0 -> başlangıçta %100 yakınlaşma
+         user-scalable=no -> çift dokunup yanlışlıkla yakınlaşmayı engeller -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- Tarayıcı sekmesinde görünen başlık -->
+    <title>Puan Tıklama Oyunu</title>
+
+    <style>
+        /* =====================================================
+           RENK VE GÖRÜNÜM AYARLARI (Karanlık Tema)
+           ===================================================== */
+        :root {
+            --arka-plan: #0f1115;          /* Sayfanın ana koyu arka planı */
+            --panel: #1a1d24;              /* Kartların/panellerin arka planı */
+            --panel-acik: #232730;         /* Üzerine gelince açılan renk */
+            --yazi: #f2f4f7;               /* Ana metin rengi (açık) */
+            --yazi-ikincil: #8b93a7;       /* İkincil/açıklama metin rengi */
+            --vurgu: #ffc93c;              /* Sarı vurgu rengi (puan için) */
+            --vurgu-2: #4cc9f0;            /* Mavi vurgu rengi (buton için) */
+            --yesil: #4ade80;              /* Alınabilir / yeterli puan (yeşil) */
+            --kirmizi: #f87171;            /* Alamaz / yetersiz puan (kırmızı) */
+            --kenarlik: #2c313c;           /* Kenarlık rengi */
+            --golge: rgba(0, 0, 0, 0.5);   /* Gölge için yarı saydam siyah */
+        }
+
+        /* ----- GENEL SIFIRLAMA ----- */
+        /* Tüm elemanların varsayılan boşluklarını ve kutu modelini düzenler */
+        * {
+            margin: 0;             /* Dış boşluk yok */
+            padding: 0;            /* İç boşluk yok */
+            box-sizing: border-box; /* Genişliğe kenarlık ve padding dahil */
+            -webkit-tap-highlight-color: transparent; /* Telefonda dokununca çıkan miji izi kaldırır */
+        }
+
+        /* Sayfanın gövdesi */
+        html, body {
+            height: 100%;                       /* Tam ekran yüksekliği */
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; /* Modern font */
+            background: var(--arka-plan);       /* Koyu arka plan */
+            color: var(--yazi);                 /* Açık yazı rengi */
+            overflow-x: hidden;                 /* Yatay kaydırmayı engeller */
+            -webkit-user-select: none;          /* Telefonda metin seçimini engeller */
+            user-select: none;
+        }
+
+        /* =====================================================
+           ANA DÜZEN (Layout)
+           İçerikleri ortalar ve maksimum genişlik verir
+           ===================================================== */
+        .sarma {
+            /* max-width: En geniş ekranda bile içerik çok geniş yayılmaz */
+            max-width: 600px;
+            margin: 0 auto;            /* Yatayda ortalar */
+            padding: 16px;             /* Kenarlardan iç boşluk */
+            min-height: 100%;          /* Ekranı kaplar */
+            display: flex;
+            flex-direction: column;    /* Öğeler alt alta dizilir */
+            gap: 16px;                 /* Öğeler arası boşluk */
+        }
+
+        /* =====================================================
+           BAŞLIK BÖLÜMÜ (Üst panel)
+           ===================================================== */
+        .baslik {
+            text-align: center;        /* Metni ortalar */
+            padding: 14px 0 6px;
+        }
+
+        .baslik h1 {
+            font-size: clamp(20px, 6vw, 28px); /* Akıllı font boyutu: ekrana göre büyür/küçülür */
+            font-weight: 800;                   /* Kalın yazı */
+            letter-spacing: 0.5px;
+            color: var(--vurgu);                /* Sarı renk */
+        }
+
+        .baslik p {
+            font-size: 13px;
+            color: var(--yazi-ikincil);         /* Gri açıklama rengi */
+            margin-top: 4px;
+        }
+
+        /* =====================================================
+           TIKLAMA MODU SEÇİCİ (Sol Tık / Sağ Tık)
+           Fareyle hangi tuşla tıklanacağını belirleyen sekme
+           ===================================================== */
+        .mod-secici {
+            display: flex;                      /* İki buton yan yana */
+            gap: 4px;                            /* Aralarında küçük boşluk */
+            background: var(--panel);           /* Arka plan kart rengi */
+            border: 1px solid var(--kenarlik);
+            border-radius: 12px;                /* Yuvarlatılmış köşeler */
+            padding: 4px;                       /* İç boşluk */
+        }
+
+        .mod-btn {
+            flex: 1;                            /* Eşit genişlikte bölünür */
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;            /* Pasifken görünmez arka plan */
+            color: var(--yazi-ikincil);         /* Pasifken gri yazı */
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;         /* Yumuşak geçiş */
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* Seçili (aktif) sekme: mavi vurgu */
+        .mod-btn.aktif {
+            background: var(--vurgu-2);         /* Mavi dolgu */
+            color: #fff;                        /* Beyaz yazı */
+            box-shadow: 0 2px 8px rgba(76, 201, 240, 0.4); /* Mavi parlama */
+        }
+
+        /* =====================================================
+           PUAN EKRANI
+           Mevcut puandaki büyük sayıyı gösterir
+           ===================================================== */
+        .puan-kutusu {
+            background: var(--panel);           /* Kart arka planı */
+            border: 1px solid var(--kenarlik);  /* İnce kenarlık */
+            border-radius: 16px;                /* Yuvarlatılmış köşeler */
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px var(--golge); /* Hafif gölge */
+        }
+
+        .puan-etiket {
+            font-size: 12px;
+            color: var(--yazi-ikincil);
+            text-transform: uppercase;          /* BÜYÜK HARF */
+            letter-spacing: 1px;
+        }
+
+        /* Büyük puan sayısı */
+        .puan-deger {
+            font-size: clamp(36px, 12vw, 56px); /* En dikkat çekici en büyük yazı */
+            font-weight: 900;
+            color: var(--vurgu);
+            margin: 4px 0;
+            font-variant-numeric: tabular-nums; /* Sayılar hizalı durur (titremez) */
+        }
+
+        /* Saniyedeki ve tık başına kazanç bilgisi */
+        .puan-alt {
+            font-size: 13px;
+            color: var(--yazi-ikincil);
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;                    /* Dar ekranda alt satıra iner */
+        }
+
+        .puan-alt span b {
+            color: var(--yesil);                /* Kazanç rakamları yeşil */
+        }
+
+        /* =====================================================
+           İSTATİSTİK SATIRI (Süre + CPS sayaçları)
+           ===================================================== */
+        .istatistik-satir {
+            display: flex;          /* Yan yana dizilir */
+            gap: 12px;              /* Aralarında boşluk */
+        }
+
+        .istatistik {
+            flex: 1;                /* Eşit genişlikte bölünür */
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px var(--golge);
+        }
+
+        .ist-etiket {
+            font-size: 11px;
+            color: var(--yazi-ikincil);
+            text-transform: uppercase;  /* BÜYÜK HARF */
+            letter-spacing: 1px;
+        }
+
+        .ist-deger {
+            font-size: clamp(18px, 6vw, 24px); /* Ekrana göre ölçeklenir */
+            font-weight: 800;
+            color: var(--vurgu-2);            /* Mavi vurgu rengi */
+            margin-top: 4px;
+            font-variant-numeric: tabular-nums; /* Sayılar titremez */
+        }
+
+        /* =====================================================
+           TIKLANAN ANA BUTON (Büyük dairesel buton)
+           ===================================================== */
+        .tiklama-alani {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .tikla-butonu {
+            /* Yuvarlak buton boyutu (ekrana göre ölçeklenir) */
+            width: clamp(190px, 56vw, 265px);
+            height: clamp(190px, 56vw, 265px);
+            border-radius: 50%;                 /* Tamamen yuvarlak */
+            border: none;
+            cursor: pointer;                   /* Üzerine gelince el işareti */
+
+            /* Butonun iç dolgu rengi (mavi tonlarında degrade) */
+            background: radial-gradient(circle at 30% 30%, var(--vurgu-2), #1b4965);
+
+            /* Yazı ayarları */
+            color: #fff;
+            font-size: clamp(16px, 5vw, 22px);
+            font-weight: 800;
+            text-align: center;
+
+            /* Görsel efektler */
+            box-shadow:
+                0 8px 30px rgba(76, 201, 240, 0.4), /* Altta mavi parlama */
+                inset 0 -8px 20px rgba(0,0,0,0.3);  /* İçte alt gölge (3B his) */
+
+            /* Basınca küçülme animasyonu için geçiş */
+            transition: transform 0.08s ease, box-shadow 0.2s ease;
+        }
+
+        /* Butona basılınca hafif küçülür (tıklama hissi verir) */
+        .tikla-butonu:active {
+            transform: scale(0.94);
+            box-shadow:
+                0 4px 15px rgba(76, 201, 240, 0.3),
+                inset 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        /* =====================================================
+           TIKLAYINCA ÇIKAN "+1" UÇAN YAZI EFEKTİ
+           ===================================================== */
+        .ucan-yazi {
+            position: fixed;                    /* Ekranda sabit konum */
+            pointer-events: none;               /* Tıklamayı engellemez */
+            font-weight: 900;
+            font-size: 24px;
+            color: var(--vurgu);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            animation: ucma 0.8s ease-out forwards; /* 0.8 sn'de yukarı kaybolur */
+            z-index: 100;
+        }
+
+        /* Yukarı doğru çıkıp silinme animasyonu */
+        @keyframes ucma {
+            0%   { transform: translate(-50%, 0) scale(1);   opacity: 1; }
+            100% { transform: translate(-50%, -80px) scale(1.5); opacity: 0; }
+        }
+
+        /* =====================================================
+           YÜKSELTME (UPGRADE) BÖLÜMÜ
+           ===================================================== */
+        .bolum-baslik {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--yazi-ikincil);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 4px;
+        }
+
+        .yükseltmeler {
+            display: flex;
+            flex-direction: column;    /* Yükseltmeler alt alta */
+            gap: 12px;                 /* Aralarında boşluk */
+        }
+
+        /* Her bir yükseltme kartı */
+        .kart {
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.08s ease;
+        }
+
+        /* Kart üzerine gelince hafif açılır (masaüstü için) */
+        .kart:hover {
+            background: var(--panel-acik);
+        }
+
+        /* Kart tıklanınca hafif küçülür */
+        .kart:active {
+            transform: scale(0.98);
+        }
+
+        /* Yükseltme alınamıyorsa (puan yetmiyorsa) soluk görünür */
+        .kart.devre-disi {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Puan yetmediğinde kart sallanır (geri bildirim: "daha puan lazım") */
+        .kart.sallaniyor {
+            border-color: var(--kirmizi);
+            animation: sallanma 0.35s ease;
+        }
+        @keyframes sallanma {
+            0%, 100% { transform: translateX(0); }
+            20%      { transform: translateX(-6px); }
+            40%      { transform: translateX(6px); }
+            60%      { transform: translateX(-4px); }
+            80%      { transform: translateX(4px); }
+        }
+
+        /* Kartın solundaki ikon kutusu (emoji burada) */
+        .kart-ikon {
+            width: 46px;
+            height: 46px;
+            min-width: 46px;            /* Sıkışmaması için sabit genişlik */
+            border-radius: 12px;
+            background: var(--panel-acik);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;            /* Emoji boyutu */
+        }
+
+        /* Kartın ortasındaki açıklama alanı */
+        .kart-metin {
+            flex: 1;                    /* Kalan alanı kaplar */
+            min-width: 0;               /* Taşmayı engeller */
+        }
+
+        .kart-metin h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .kart-metin p {
+            font-size: 12px;
+            color: var(--yazi-ikincil);
+            line-height: 1.4;
+        }
+
+        /* Kartın sağındaki fiyat ve seviye bilgisi */
+        .kart-sag {
+            text-align: right;
+            min-width: 80px;
+        }
+
+        .fiyat {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--kirmizi);      /* Başlangıçta kırmızı (alınmaz) */
+        }
+
+        /* Puan yettiğinde fiyat yeşile döner */
+        .fiyat.alinabilir {
+            color: var(--yesil);
+        }
+
+        .seviye {
+            font-size: 11px;
+            color: var(--yazi-ikincil);
+            margin-top: 2px;
+        }
+
+        /* =====================================================
+           ALT BİLGİ (Sıfırla butonu)
+           ===================================================== */
+        .alt-bilgi {
+            text-align: center;
+            margin-top: auto;           /* En alta iter */
+            padding-top: 8px;
+        }
+
+        .sifirla {
+            background: transparent;
+            border: 1px solid var(--kenarlik);
+            color: var(--yazi-ikincil);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .sifirla:hover {
+            border-color: var(--kirmizi);
+            color: var(--kirmizi);
+        }
+
+        /* =====================================================
+           SÜRE SEÇİCİ (Sınırsız / 5 / 10 / 30 sn / 1 dk)
+           5 buton yan yana; telefonda sığması için daha küçük
+           ===================================================== */
+        .sure-secici {
+            display: flex;
+            gap: 4px;
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .sure-btn {
+            flex: 1;                            /* 5 buton eşit genişlikte */
+            padding: 8px 4px;                   /* Dar (telefona sığar) */
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--yazi-ikincil);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            -webkit-user-select: none;
+            user-select: none;
+            white-space: nowrap;                /* Yazı bölünmesin */
+        }
+
+        /* Seçili süre sekmesi: sarı vurgu (mod sekmesinden ayrışsın) */
+        .sure-btn.aktif {
+            background: var(--vurgu);           /* Sarı */
+            color: #1a1d24;                     /* Koyu yazı */
+            box-shadow: 0 2px 8px rgba(255, 201, 60, 0.4);
+        }
+
+        /* =====================================================
+           SONUÇ PENCERESİ (Süre dolunca çıkan modal)
+           ===================================================== */
+        .sonuc-zemin {
+            position: fixed;                    /* Ekranda sabit, tüm ekranı kaplar */
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);     /* Yarı saydam koyu perde */
+            display: none;                      /* Varsayılan gizli (JS açar) */
+            justify-content: center;            /* Yatayda ortala */
+            align-items: center;                /* Dikeyde ortala */
+            z-index: 200;                       /* Her şeyin üstünde */
+            padding: 16px;
+        }
+
+        /* Açıkken flex ile ortala */
+        .sonuc-zemin.acik {
+            display: flex;
+        }
+
+        .sonuc-kutu {
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 20px;
+            padding: 24px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: modalAcilis 0.3s ease;   /* Açılış animasyonu */
+        }
+
+        @keyframes modalAcilis {
+            from { transform: scale(0.8); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+
+        .sonuc-kutu h2 {
+            font-size: 22px;
+            color: var(--vurgu);
+            margin-bottom: 12px;
+        }
+
+        /* Büyük CPS rakamı */
+        .sonuc-cps {
+            font-size: 56px;
+            font-weight: 900;
+            color: var(--yazi);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .sonuc-cps-etiket {
+            font-size: 13px;
+            color: var(--yazi-ikincil);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        /* Derece rozeti: arka plan rengi JS ile dereceye göre değişir */
+        .sonuc-derece {
+            display: inline-block;
+            font-size: 20px;
+            font-weight: 800;
+            padding: 8px 20px;
+            border-radius: 999px;               /* Tam yuvarlak (pil) */
+            margin-bottom: 12px;
+        }
+
+        .sonuc-detay {
+            font-size: 13px;
+            color: var(--yazi-ikincil);
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .sonuc-butonlar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sonuc-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.08s ease, opacity 0.15s ease;
+        }
+
+        .sonuc-btn:active { transform: scale(0.96); }
+
+        .sonuc-btn.tekrar {
+            background: var(--vurgu-2);         /* Mavi */
+            color: #fff;
+        }
+
+        .sonuc-btn.kapat {
+            background: var(--panel-acik);
+            color: var(--yazi);
+        }
+
+        /* =====================================================
+           TELEFON / DİKEY EKRAN AYARLARI
+           Küçük ekranlarda boşlukları sıkıştırır
+           ===================================================== */
+        @media (max-width: 380px) {
+            .sarma { padding: 12px; gap: 12px; }
+            .puan-kutusu { padding: 16px; }
+            .kart { padding: 12px; }
+        }
+
+        /* =====================================================
+           YATAY / BÜYÜK EKRAN AYARLARI
+           Çok geniş ekranlarda butonu biraz büyütür
+           ===================================================== */
+        @media (min-width: 768px) {
+            .tikla-butonu {
+                width: 300px;
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- =====================================================
+         OYUN İÇERİĞİ (GÖRSEL KISIM)
+         ===================================================== -->
+    <div class="sarma">
+
+        <!-- Üst başlık -->
+        <header class="baslik">
+            <h1>💰 Puan Tıklama</h1>
+            <p>Butona tıkla, puan topla, yükseltmeleri al!</p>
+        </header>
+
+        <!-- Tıklama modu seçici: Fare ile SOL ya da SAĞ tık kullanılacağını belirler -->
+        <div class="mod-secici">
+            <!-- data-mod: 'sol' = sol tık (farenin sol tuşu), 'sag' = sağ tık (farenin sağ tuşu) -->
+            <button class="mod-btn aktif" data-mod="sol">👈 Sol Tık</button>
+            <button class="mod-btn" data-mod="sag">👉 Sağ Tık</button>
+        </div>
+
+        <!-- Süre seçici: Test süresini belirler. data-sure: 0=sınırsız, diğerleri saniye -->
+        <!-- Süre dolunca sonuç penceresi açılır ve ortalama CPS gösterilir -->
+        <div class="sure-secici">
+            <button class="sure-btn aktif" data-sure="0">♾️ Sınırsız</button>
+            <button class="sure-btn" data-sure="5">5 Sn</button>
+            <button class="sure-btn" data-sure="10">10 Sn</button>
+            <button class="sure-btn" data-sure="30">30 Sn</button>
+            <button class="sure-btn" data-sure="60">1 Dk</button>
+        </div>
+
+        <!-- Sıfırla butonu: toplam puanın ÜSTÜNDE (en üstte) -->
+        <div style="display:flex; justify-content:center;">
+            <button class="sifirla" id="sifirlaButonu">🔄 Oyunu Sıfırla</button>
+        </div>
+
+        <!-- Puan ekranı -->
+        <section class="puan-kutusu">
+            <div class="puan-etiket">Toplam Puan</div>
+            <!-- puan-deger: JavaScript buraya anlık puanı yazar -->
+            <div class="puan-deger" id="puan">0</div>
+            <!-- Alt bilgi: tık başına ve saniyedeki kazanç -->
+            <div class="puan-alt">
+                <span>Her tıkta: <b id="tikBasi">1</b></span>
+                <span>Saniyede: <b id="saniyede">0</b></span>
+            </div>
+        </section>
+
+        <!-- Oturum istatistikleri: Süre sayacı (saniye + salise) ve CPS (saniyedeki tıklama) -->
+        <!-- Bu sayaçlar ilk tıklamada başlar, "Oyunu Sıfırla" ile sıfırlanır -->
+        <section class="istatistik-satir">
+            <div class="istatistik">
+                <div class="ist-etiket" id="sureEtiket">⏱️ Süre</div>
+                <!-- sure: Süre dolana kadar kalan süre (geri sayım) ya da geçen süre -->
+                <div class="ist-deger" id="sure">0,00sn</div>
+            </div>
+            <div class="istatistik">
+                <div class="ist-etiket">⚡ CPS</div>
+                <!-- cps: Saniyedeki ortalama tıklama sayısı (Clicks Per Second) -->
+                <div class="ist-deger" id="cps">0/s</div>
+            </div>
+        </section>
+
+        <!-- Tıklanan ana buton -->
+        <div class="tiklama-alani">
+            <button class="tikla-butonu" id="tiklaButonu">
+                TIKLA!<br>👆
+            </button>
+        </div>
+
+        <!-- Yükseltme bölümü başlığı -->
+        <div class="bolum-baslik">⚙️ Yükseltmeler</div>
+
+        <!-- Yükseltme kartları -->
+        <div class="yükseltmeler">
+            <!--
+                Her yükseltme kartının yapısı:
+                - data-id: JavaScript'in hangi yükseltme olduğunu tanıması için benzersiz kimlik
+                - kart-ikon: görsel emoji
+                - kart-metin: isim ve açıklama
+                - kart-sag: fiyat ve seviye
+            -->
+
+            <!-- YÜKSELTME 1: Tıklama Gücü -> Her tıklamada kazanılan puanı artırır -->
+            <div class="kart" data-id="tikGucu">
+                <div class="kart-ikon">👆</div>
+                <div class="kart-metin">
+                    <h3>Tıklama Gücü</h3>
+                    <p>Her tıklamada +1 daha fazla puan kazandırır.</p>
+                </div>
+                <div class="kart-sag">
+                    <div class="fiyat" id="fiyat-tikGucu">50</div>
+                    <div class="seviye">Seviye <span id="seviye-tikGucu">0</span></div>
+                </div>
+            </div>
+
+            <!-- YÜKSELTME 2: Otomatik Tıklayıcı -> Saniyede otomatik puan kazandırır -->
+            <div class="kart" data-id="otomatik">
+                <div class="kart-ikon">🤖</div>
+                <div class="kart-metin">
+                    <h3>Otomatik Tıklayıcı</h3>
+                    <p>Saniyede otomatik 1 puan kazandırır (tıklamana gerek yok).</p>
+                </div>
+                <div class="kart-sag">
+                    <div class="fiyat" id="fiyat-otomatik">100</div>
+                    <div class="seviye">Seviye <span id="seviye-otomatik">0</span></div>
+                </div>
+            </div>
+
+            <!-- YÜKSELTME 3: Çarpan -> TÜM kazançları iki katına çıkarır -->
+            <div class="kart" data-id="carpan">
+                <div class="kart-ikon">⚡</div>
+                <div class="kart-metin">
+                    <h3>Süper Çarpan</h3>
+                    <p>Tüm kazançları (tık + otomatik) iki katına çıkarır.</p>
+                </div>
+                <div class="kart-sag">
+                    <div class="fiyat" id="fiyat-carpan">250</div>
+                    <div class="seviye">Seviye <span id="seviye-carpan">0</span></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- =====================================================
+         SONUÇ PENCERESİ (Süre dolunca açılır)
+         Ortalama CPS ve dereceyi (çok yavaş / orta / iyi / çok iyi) gösterir
+         ===================================================== -->
+    <div class="sonuc-zemin" id="sonucZemin">
+        <div class="sonuc-kutu">
+            <h2 id="sonucBaslik">🏁 Süre Doldu!</h2>
+
+            <!-- Büyük toplam tıklama rakamı -->
+            <div class="sonuc-cps" id="sonucCps">0,0</div>
+            <div class="sonuc-cps-etiket">toplam tıklama</div>
+
+            <!-- Derece rozeti (renkli) -->
+            <div class="sonuc-derece" id="sonucDerece">-</div>
+
+            <!-- Detay: süre, tıklama sayısı, eşiğe göre açıklama -->
+            <div class="sonuc-detay" id="sonucDetay"></div>
+
+            <!-- Butonlar -->
+            <div class="sonuc-butonlar">
+                <button class="sonuc-btn tekrar" id="tekrarBtn">🔄 Tekrar Dene</button>
+                <button class="sonuc-btn kapat" id="kapatBtn">✖ Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         OYUN MANTIĞI (JAVASCRIPT)
+         ===================================================== -->
+    <script>
+        /* -----------------------------------------------------
+           1) OYUN VERİSİ (State)
+           Oyundaki tüm değerleri burada tutarız.
+           ----------------------------------------------------- */
+        const oyun = {
+            puan: 0,           // O anki puan
+            tikBasi: 1,        // Her tıklamada kaç puan geldiği (Tıklama Gücü belirler)
+            saniyede: 0,       // Saniyede otomatik kaç puan geldiği (Otomatik belirler)
+            carpanSeviye: 0,   // Süper Çarpan seviyesi (tüm kazancı 2^seviye ile çarpar)
+            tiklamaSayisi: 0,     // Bu oturumdaki toplam tıklama sayısı (CPS hesabı için)
+            baslangicZamani: null, // İlk tıklamanın zamanı (ms); null = sayaç henüz başlamadı
+            tiklamaModu: 'sol',   // Hangi fare tuşuyla tıklanacak: 'sol' (sol tık) | 'sag' (sağ tık)
+            hedefSure: 0,         // Test süresi (saniye). 0 = sınırsız. 5/10/30/60 = zamanlı test
+            bitti: false,         // Zamanlı test bitti mi? (bittiyse tıklama sayılmaz)
+        };
+
+        /* -----------------------------------------------------
+           2) YÜKSELTME TANIMLARI
+           Her yükseltmenin: temel fiyat, fiyat çarpanı (her
+           alımda pahalaşır) ve etkisi burada tanımlıdır.
+           ----------------------------------------------------- */
+        const yukseltmeler = {
+            // Tıklama Gücü: tık başına +1 puan ekler (1. yükseltme -> 50)
+            tikGucu: {
+                tabanFiyat: 50,     // İlk fiyat
+                carpim: 1.5,        // Her alımda fiyat bu kadar çarpar (pahalaşır)
+                seviye: 0,          // Mevcut seviye
+            },
+            // Otomatik Tıklayıcı: saniyede +1 puan ekler (2. yükseltme -> 100)
+            otomatik: {
+                tabanFiyat: 100,
+                carpim: 1.6,
+                seviye: 0,
+            },
+            // Süper Çarpan: tüm kazancı 2 katına çıkarır (3. yükseltme -> 250)
+            carpan: {
+                tabanFiyat: 250,
+                carpim: 3.0,
+                seviye: 0,
+            },
+        };
+
+        /* -----------------------------------------------------
+           3) YARDIMCI FONKSİYONLAR
+           ----------------------------------------------------- */
+
+        // Bir yükseltmenin GÜNCEL fiyatını hesaplar.
+        // Formül: tabanFiyat * (carpim ^ seviye)
+        // Yani her alımda fiyat katlanarak artar.
+        function fiyatHesapla(id) {
+            const y = yukseltmeler[id];
+            return Math.floor(y.tabanFiyat * Math.pow(y.carpim, y.seviye));
+        }
+
+        // Çarpan etkisini uygular. carpanSeviye kadar 2 ile çarpar.
+        // Örn: seviye 2 ise kazanç 4 katına çıkar (2 * 2).
+        function carpanEtkisi() {
+            return Math.pow(2, oyun.carpanSeviye);
+        }
+
+        /* -----------------------------------------------------
+           ZAMANLI TEST: Dereceler ORTALAMA CPS'ye göre değil,
+           TOPLAM tıklama sayısına göre verilir. 5 kademeli.
+           -----------------------------------------------------
+           5 sn referans (kullanıcının verdiği sayılar):
+             tıklama < 10  -> Çok Yavaş 🐢
+             tıklama < 20  -> Yavaş 🐌
+             tıklama < 50  -> Orta 🙂      (30 burada)
+             tıklama < 70  -> Hızlı ⚡      (50 burada)
+             tıklama >= 70 -> Çok Hızlı 🔥
+
+           Diğer süreler aynı hız oranını (CPS) koruyacak şekilde
+           süreyle orantılanır (uzun sürede daha çok tıklama gerekir).
+           cokYavas/yavas/orta/hizli = o sınırın TOPLAM tıklama karşılığı.
+           ----------------------------------------------------- */
+        const sureEsikleri = {
+            5:  { etiket: '5 Saniye',  cokYavas: 10,  yavas: 20,  orta: 50,  hizli: 70  },
+            10: { etiket: '10 Saniye', cokYavas: 20,  yavas: 40,  orta: 100, hizli: 140 },
+            30: { etiket: '30 Saniye', cokYavas: 60,  yavas: 120, orta: 300, hizli: 420 },
+            60: { etiket: '1 Dakika',  cokYavas: 120, yavas: 240, orta: 600, hizli: 840 },
+        };
+
+        // Dereceyi TOPLAM tıklama sayısına göre verir (CPS'ye göre değil).
+        // 5 kademeli: çok yavaş -> yavaş -> orta -> hızlı -> çok hızlı
+        function dereceHesapla(tiklama, sure) {
+            const s = sureEsikleri[sure];
+            if (!s) return { metin: 'Orta 🙂', renk: '#fbbf24' }; // bilinmeyen süre yedeği
+            if (tiklama < s.cokYavas) return { metin: 'Çok Yavaş 🐢', renk: '#f87171' }; // kırmızı
+            if (tiklama < s.yavas)    return { metin: 'Yavaş 🐌',     renk: '#fb923c' }; // turuncu
+            if (tiklama < s.orta)     return { metin: 'Orta 🙂',      renk: '#fbbf24' }; // sarı
+            if (tiklama < s.hizli)    return { metin: 'Hızlı ⚡',      renk: '#4cc9f0' }; // mavi
+            return                      { metin: 'Çok Hızlı 🔥',     renk: '#4ade80' }; // yeşil
+        }
+
+        // Büyük sayıları okunaklı gösterir (1200 -> "1.20K" gibi)
+        // Türkçe'de binlik ayracı için nokta kullanılır.
+        function sayiBicimle(n) {
+            n = Math.floor(n);
+            if (n < 1000) return n.toString();
+            if (n < 1e6)  return (n / 1e3).toFixed(2).replace('.', ',') + 'K';  // Bin
+            if (n < 1e9)  return (n / 1e6).toFixed(2).replace('.', ',') + 'M';  // Milyon
+            if (n < 1e12) return (n / 1e9).toFixed(2).replace('.', ',') + 'B';  // Milyar
+            return (n / 1e12).toFixed(2).replace('.', ',') + 'T';               // Trilyon
+        }
+
+        /* -----------------------------------------------------
+           4) EKRANI GÜNCELLEME
+           Tüm değerleri HTML'e yazar ve kartların
+           alınabilir/alınamaz durumunu ayarlar.
+           ----------------------------------------------------- */
+        function ekraniGuncelle() {
+            // Puan ve alt bilgiler
+            document.getElementById('puan').textContent = sayiBicimle(oyun.puan);
+            document.getElementById('tikBasi').textContent = sayiBicimle(oyun.tikBasi * carpanEtkisi());
+            document.getElementById('saniyede').textContent = sayiBicimle(oyun.saniyede * carpanEtkisi());
+
+            // Her yükseltme kartını güncelle
+            for (const id in yukseltmeler) {
+                const fiyat = fiyatHesapla(id);
+                const fiyatEl = document.getElementById('fiyat-' + id);
+                const seviyeEl = document.getElementById('seviye-' + id);
+                const kart = document.querySelector('.kart[data-id="' + id + '"]');
+
+                fiyatEl.textContent = sayiBicimle(fiyat);
+                seviyeEl.textContent = yukseltmeler[id].seviye;
+
+                // Puan yetiyorsa yeşil + kart aktif, yetmiyorsa kırmızı + pasif
+                if (oyun.puan >= fiyat) {
+                    fiyatEl.classList.add('alinabilir');
+                    kart.classList.remove('devre-disi');
+                } else {
+                    fiyatEl.classList.remove('alinabilir');
+                    kart.classList.add('devre-disi');
+                }
+            }
+        }
+
+        /* -----------------------------------------------------
+           4.4) ÖLÇÜM SIFIRLAMA + TIKLAMA MODU + SÜRE SEÇİMİ
+           ----------------------------------------------------- */
+
+        // Ölçümü tamamen sıfırlar: puan, süre, CPS ve "bitti" durumu.
+        // Hem mod hem süre değişiminde taze başlamak için kullanılır.
+        function olcumSifirla() {
+            oyun.puan = 0;
+            oyun.baslangicZamani = null; // Süre sayacı sıfır (ilk tıkta yeniden başlar)
+            oyun.tiklamaSayisi = 0;     // CPS için tıklama sayısı sıfır
+            oyun.bitti = false;         // Zamanlı test yeniden başlayabilir
+        }
+
+        // --- TIKLAMA MODU (Sol / Sağ) ---
+        // Mod arayüzünü (aktif sekme + buton yazısı) oyun.tiklamaModu'na göre günceller
+        function modGuncelle() {
+            const mod = oyun.tiklamaModu;
+            document.querySelectorAll('.mod-btn').forEach(btn => {
+                btn.classList.toggle('aktif', btn.dataset.mod === mod);
+            });
+            document.getElementById('tiklaButonu').innerHTML =
+                mod === 'sol' ? 'SOL TIKLA!<br>👈' : 'SAĞ TIKLA!<br>👉';
+        }
+
+        // Bir tıklama modu sekmesi seçilince: modu ayarla, ölçümü sıfırla, kaydet
+        function modSec(mod) {
+            oyun.tiklamaModu = mod;
+            olcumSifirla();            // Süre + CPS + puan sıfır (önceki istek)
+            modalKapat();              // Açık sonuç penceresi varsa kapat
+            modGuncelle();
+            ekraniGuncelle();
+            istatistikGuncelle();
+            kaydet();
+        }
+
+        // --- SÜRE SEÇİMİ (Sınırsız / 5 / 10 / 30 sn / 1 dk) ---
+        // Süre sekme arayüzünü oyun.hedefSure'ye göre günceller
+        function sureGuncelle() {
+            document.querySelectorAll('.sure-btn').forEach(btn => {
+                btn.classList.toggle('aktif', Number(btn.dataset.sure) === oyun.hedefSure);
+            });
+        }
+
+        // Bir süre sekmesi seçilince: hedef süreyi ayarla, ölçümü sıfırla, kaydet
+        function sureSec(sure) {
+            oyun.hedefSure = Number(sure); // 0 = sınırsız, diğerleri saniye
+            olcumSifirla();               // Süre + CPS + puan sıfır
+            modalKapat();
+            sureGuncelle();
+            ekraniGuncelle();
+            istatistikGuncelle();
+            kaydet();
+        }
+
+        /* -----------------------------------------------------
+           4.6) ZAMANLI TEST SONUÇ PENCERESİ
+           ----------------------------------------------------- */
+
+        // Zamanlı test dolduğunda çağrılır: CPS hesapla, derece bul, modalı aç
+        function suresiDoldu() {
+            if (oyun.bitti) return;     // İkinci kez çağrılmasın
+            oyun.bitti = true;          // Artık tıklamalar sayılmaz
+
+            // CPS yalnızca bilgi amaçlı; derece TOPLAM tıklamaya göre verilir
+            const gecenSaniye = oyun.baslangicZamani ? (Date.now() - oyun.baslangicZamani) / 1000 : oyun.hedefSure;
+            const cps = gecenSaniye > 0 ? (oyun.tiklamaSayisi / gecenSaniye) : 0;
+            const derece = dereceHesapla(oyun.tiklamaSayisi, oyun.hedefSure); // derece = tıklamaya göre
+
+            // Modal: büyük rakam TOPLAM tıklama sayısıdır
+            document.getElementById('sonucCps').textContent = oyun.tiklamaSayisi;
+            const dereceEl = document.getElementById('sonucDerece');
+            dereceEl.textContent = derece.metin;
+            dereceEl.style.background = derece.renk;
+            // Açık renkli zeminlerde koyu yazı, koyu renkte beyaz yazı
+            const acikRenkler = ['#fbbf24', '#4cc9f0', '#4ade80'];
+            dereceEl.style.color = acikRenkler.includes(derece.renk) ? '#1a1d24' : '#fff';
+
+            // Detay satırı: CPS + tıklama eşikleri
+            const e = sureEsikleri[oyun.hedefSure];
+            document.getElementById('sonucDetay').innerHTML =
+                e.etiket + ' • ' + cps.toFixed(1).replace('.', ',') + ' CPS<br>' +
+                '(çok yavaş < ' + e.cokYavas + ' • yavaş < ' + e.yavas +
+                ' • orta < ' + e.orta + ' • hızlı < ' + e.hizli +
+                ' • çok hızlı ≥ ' + e.hizli + ' tıklama)';
+
+            // Süre/CPS kutularını son değerde dondur
+            document.getElementById('sureEtiket').textContent = '⏱️ Bitti';
+            document.getElementById('sure').textContent = '0,00sn';
+            document.getElementById('cps').textContent = cps.toFixed(1).replace('.', ',') + '/s';
+
+            modalAc();
+        }
+
+        // Sonuç penceresini aç/kapat
+        function modalAc() {
+            document.getElementById('sonucZemin').classList.add('acik');
+        }
+        function modalKapat() {
+            document.getElementById('sonucZemin').classList.remove('acik');
+        }
+
+        /* -----------------------------------------------------
+           4.5) İSTATİSTİK GÜNCELLEME (Süre + CPS)
+           Süre: İlk tıklamadan beri geçen süre (saniye + salise)
+           CPS : Toplam tıklama / geçen saniye (saniyedeki ortalama tıklama)
+           ----------------------------------------------------- */
+        function istatistikGuncelle() {
+            const sureEl = document.getElementById('sure');
+            const cpsEl = document.getElementById('cps');
+            const sureEtiketEl = document.getElementById('sureEtiket');
+
+            // Zamanlı test bittiyse değerler donmuş kalsın (üzerine yazma)
+            if (oyun.bitti) return;
+
+            // Sayaç henüz başlamadıysa (ilk tıklama yoksa)
+            if (oyun.baslangicZamani === null) {
+                if (oyun.hedefSure > 0) {
+                    sureEtiketEl.textContent = '⏱️ Kalan';   // zamanlı: başta tam süre
+                    sureEl.textContent = oyun.hedefSure.toFixed(2).replace('.', ',') + 'sn';
+                } else {
+                    sureEtiketEl.textContent = '⏱️ Süre';    // sınırsız
+                    sureEl.textContent = '0,00sn';
+                }
+                cpsEl.textContent = '0/s';
+                return;
+            }
+
+            // Geçen süre (saniye, virgüllü)
+            const gecenSaniye = (Date.now() - oyun.baslangicZamani) / 1000;
+
+            // ZAMANLI TEST: süre doldu mu?
+            if (oyun.hedefSure > 0 && gecenSaniye >= oyun.hedefSure) {
+                suresiDoldu();   // sonucu hesapla, modal aç, ekranı dondur
+                return;
+            }
+
+            if (oyun.hedefSure > 0) {
+                // Zamanlı: geri sayım (kalan süre aşağı iner)
+                const kalan = Math.max(0, oyun.hedefSure - gecenSaniye);
+                sureEtiketEl.textContent = '⏱️ Kalan';
+                sureEl.textContent = kalan.toFixed(2).replace('.', ',') + 'sn';
+            } else {
+                // Sınırsız: geçen süre yukarı çıkar
+                sureEtiketEl.textContent = '⏱️ Süre';
+                sureEl.textContent = gecenSaniye.toFixed(2).replace('.', ',') + 'sn';
+            }
+
+            // CPS = toplam tıklama / geçen saniye (canlı)
+            const cps = gecenSaniye > 0 ? (oyun.tiklamaSayisi / gecenSaniye) : 0;
+            cpsEl.textContent = cps.toFixed(1).replace('.', ',') + '/s';
+        }
+
+        /* -----------------------------------------------------
+           5) YÜKSELTME SATIN ALMA
+           Tıklanan kartın yükseltmesini uygular.
+           ----------------------------------------------------- */
+        function yukseltmeAl(id) {
+            const fiyat = fiyatHesapla(id);
+            const kart = document.querySelector('.kart[data-id="' + id + '"]');
+
+            // Puan yetmiyorsa kartı salla (geri bildirim) ve çık
+            if (oyun.puan < fiyat) {
+                if (kart) {
+                    kart.classList.remove('sallaniyor'); // Animasyonu tekrar tetiklemek için kaldır
+                    void kart.offsetWidth;               // Tarayıcıyı yeniden çizmeye zorla (reflow)
+                    kart.classList.add('sallaniyor');    // Sallanma efektini başlat
+                    setTimeout(() => kart.classList.remove('sallaniyor'), 400);
+                }
+                return;
+            }
+
+            // Puanı düş
+            oyun.puan -= fiyat;
+            // Seviyeyi bir artır
+            yukseltmeler[id].seviye++;
+
+            // Yükseltmenin etkisini uygula
+            if (id === 'tikGucu') {
+                oyun.tikBasi += 1;          // Tık başına +1
+            } else if (id === 'otomatik') {
+                oyun.saniyede += 1;         // Saniyede +1
+            } else if (id === 'carpan') {
+                oyun.carpanSeviye += 1;     // Tüm kazanç 2 kat
+            }
+
+            ekraniGuncelle();
+            kaydet();                       // İlerlemeyi kaydet
+        }
+
+        /* -----------------------------------------------------
+           6) TIKLAMA İŞLEMİ
+           Ana butona basınca puan ekler ve uçan yazı gösterir.
+           ----------------------------------------------------- */
+        function tikla(olay) {
+            // Zamanlı test bittiyse tıklama sayılmasın (test sonucu donmuş)
+            if (oyun.bitti) return;
+
+            // Çarpan etkili tık başına kazanç
+            const kazanilan = oyun.tikBasi * carpanEtkisi();
+            oyun.puan += kazanilan;              // PUANI ARTIR (tıklanınca puan eklenir)
+
+            // --- Süre / CPS sayacı ---
+            oyun.tiklamaSayisi++;                  // Bu oturumdaki tıklama sayısını artır
+            if (oyun.baslangicZamani === null) {
+                oyun.baslangicZamani = Date.now(); // İLK tıklamada saniye sayacını başlat
+            }
+            istatistikGuncelle();                  // İstatistikleri anında güncelle
+
+            // "+X" uçan yazısını tıklanan yerde göster
+            ucanYaziGoster(olay, '+' + sayiBicimle(kazanilan));
+
+            ekraniGuncelle();
+        }
+
+        // Ekranda tıklanan konumda uçan sayı oluşturur
+        function ucanYaziGoster(olay, metin) {
+            const el = document.createElement('div');
+            el.className = 'ucan-yazi';
+            el.textContent = metin;
+
+            // Tıklanan/parmak konumunu bul (mouse veya dokunma)
+            const x = (olay.touches && olay.touches[0]) ? olay.touches[0].clientX
+                    : (olay.clientX || 0);
+            const y = (olay.touches && olay.touches[0]) ? olay.touches[0].clientY
+                    : (olay.clientY || 0);
+
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            document.body.appendChild(el);
+
+            // Animasyon bitince elemanı temizle
+            setTimeout(() => el.remove(), 800);
+        }
+
+        /* -----------------------------------------------------
+           7) OTOMATİK KAZANÇ DÖNGÜSÜ
+           Saniyede bir, otomatik kazancı puana ekler.
+           ----------------------------------------------------- */
+        setInterval(() => {
+            if (oyun.saniyede > 0) {
+                oyun.puan += oyun.saniyede * carpanEtkisi();
+                ekraniGuncelle();
+                // Sık kaydetmek yerine her saniye sessizce güncelle
+            }
+        }, 1000); // Her 1000 ms = 1 saniye
+
+        // Süre / CPS sayacı: salisenin akması görünmesi için saniyede ~20 kez günceller
+        setInterval(istatistikGuncelle, 50);
+
+        /* -----------------------------------------------------
+           8) KAYDETME / YÜKLEME (LocalStorage)
+           Sayfayı kapatınca ilerleme kaybolmaz.
+           ----------------------------------------------------- */
+        const KAYIT_ANAHTARI = 'tiklama_oyunu_kayit';
+
+        function kaydet() {
+            // Hem oyun hem yükseltme seviyelerini birlikte sakla
+            const veri = {
+                puan: oyun.puan,
+                tikBasi: oyun.tikBasi,
+                saniyede: oyun.saniyede,
+                carpanSeviye: oyun.carpanSeviye,
+                tiklamaModu: oyun.tiklamaModu, // Sol/sağ tık tercihi
+                seviyeler: {
+                    tikGucu: yukseltmeler.tikGucu.seviye,
+                    otomatik: yukseltmeler.otomatik.seviye,
+                    carpan: yukseltmeler.carpan.seviye,
+                }
+            };
+            localStorage.setItem(KAYIT_ANAHTARI, JSON.stringify(veri));
+        }
+
+        function yukle() {
+            const kayitli = localStorage.getItem(KAYIT_ANAHTARI);
+            if (!kayitli) return; // Kayıt yoksa hiçbir şey yapma
+
+            const veri = JSON.parse(kayitli);
+            oyun.puan = veri.puan || 0;
+            oyun.tikBasi = veri.tikBasi || 1;
+            oyun.saniyede = veri.saniyede || 0;
+            oyun.carpanSeviye = veri.carpanSeviye || 0;
+            oyun.tiklamaModu = veri.tiklamaModu || 'sol'; // Sol/sağ tık tercihi
+
+            if (veri.seviyeler) {
+                yukseltmeler.tikGucu.seviye = veri.seviyeler.tikGucu || 0;
+                yukseltmeler.otomatik.seviye = veri.seviyeler.otomatik || 0;
+                yukseltmeler.carpan.seviye = veri.seviyeler.carpan || 0;
+            }
+        }
+
+        /* -----------------------------------------------------
+           9) OLAY DİNLEYİCİLERİ (Event Listeners)
+           Butonları ve kartları tıklamaya bağlar.
+           ----------------------------------------------------- */
+        // Ana tıklama butonu: seçilen moda göre SOL veya SAĞ tıkla çalışır
+        const tiklaBtn = document.getElementById('tiklaButonu');
+
+        // Sağ tık menüsünü buton üzerinde engelle (sağ tık modunda menü çıkmaz, akıcı tıklanır)
+        tiklaBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // mousedown ile tuşu ayır: 0 = sol tuş, 2 = sağ tuş
+        // Sadece seçili moda uyan tuş tıklamayı tetikler
+        tiklaBtn.addEventListener('mousedown', (e) => {
+            if (oyun.tiklamaModu === 'sol' && e.button === 0) {
+                tikla(e);                       // Sol tık modu + sol tuş
+            } else if (oyun.tiklamaModu === 'sag' && e.button === 2) {
+                tikla(e);                       // Sağ tık modu + sağ tuş
+            }
+            // Dokunmatik (telefon) tıklamalar mousedown button=0 üretir -> sol tık modunda çalışır
+        });
+
+        // Sol/Sağ tık modu sekmelerini bağla
+        document.querySelectorAll('.mod-btn').forEach(btn => {
+            btn.addEventListener('click', () => modSec(btn.dataset.mod));
+        });
+
+        // Süre sekmelerini bağla (Sınırsız / 5 / 10 / 30 sn / 1 dk)
+        // Tıklayınca ilgili süreyi seçer, ölçümü sıfırlar ve sayacı başlatır
+        document.querySelectorAll('.sure-btn').forEach(btn => {
+            btn.addEventListener('click', () => sureSec(btn.dataset.sure));
+        });
+
+        // Tüm yükseltme kartlarına tıklama ekle
+        document.querySelectorAll('.kart').forEach(kart => {
+            kart.addEventListener('click', () => {
+                yukseltmeAl(kart.dataset.id);
+            });
+        });
+
+        // Sıfırla butonu
+        document.getElementById('sifirlaButonu').addEventListener('click', () => {
+            if (confirm('Tüm ilerleme silinsin mi?')) {
+                localStorage.removeItem(KAYIT_ANAHTARI);
+                location.reload(); // Sayfayı yenileyip baştan başlat
+            }
+        });
+
+        // Sonuç penceresi: "Tekrar Dene" -> Aynı süreyi taze başlat (puan/süre/CPS sıfırlanır)
+        document.getElementById('tekrarBtn').addEventListener('click', () => {
+            olcumSifirla();        // bitti=false, puan/süre/CPS sıfır
+            modalKapat();
+            ekraniGuncelle();
+            istatistikGuncelle();  // "Kalan X,00sn" hazır, ilk tıkta sayar
+            kaydet();
+        });
+
+        // Sonuç penceresi: "Kapat" -> Modalı kapat ve Sınırsız (serbest) moda geç
+        document.getElementById('kapatBtn').addEventListener('click', () => {
+            modalKapat();
+            oyun.hedefSure = 0;    // Sınırsız (süreli testi kapat, serbest tıklama)
+            olcumSifirla();        // tıklama kilidini aç, sayaçları sıfırla
+            sureGuncelle();        // "Sınırsız" sekmesini aktif yap
+            ekraniGuncelle();
+            istatistikGuncelle();
+            kaydet();
+        });
+
+        /* -----------------------------------------------------
+           10) BAŞLAT
+           Kayıtlı veriyi yükleyip ekranı çizer.
+           ----------------------------------------------------- */
+        yukle();
+        ekraniGuncelle();
+        modGuncelle();          // Sekme + buton yazısını seçili moda göre ayarla
+        istatistikGuncelle(); // Süre/CPS sayaçlarını başlangıçta sıfır göster
+    </script>
+</body>
+</html>
