@@ -1,0 +1,4 @@
+# Arama motorlarına: bu sitenin hiçbir sayfasını tarama/indeksleme
+# (Google'da aramada çıkmasın diye). Linki olanlar yine açabilir.
+User-agent: *
+Disallow: /
