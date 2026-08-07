@@ -415,6 +415,79 @@
         }
 
         /* =====================================================
+           SKOR TABLOSU (BEST) — sağda / dar ekranda altta
+           ===================================================== */
+        .skor-tablosu {
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px var(--golge);
+        }
+
+        /* En üstte sarı arka planlı "BEST" başlığı */
+        .skor-baslik {
+            background: var(--vurgu);     /* sarı */
+            color: #1a1d24;               /* koyu yazı */
+            font-weight: 900;
+            font-size: 15px;
+            letter-spacing: 1px;
+            text-align: center;
+            padding: 9px;
+        }
+
+        .skor-liste {
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .skor-satir {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-acik);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .skor-satir .skor-sure {
+            color: var(--yazi-ikincil);
+            font-weight: 700;
+        }
+
+        .skor-satir .skor-deger {
+            color: var(--vurgu);
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Yeni rekor kırılınca o satır yeşil parlar */
+        .skor-satir.yeni {
+            border-color: var(--yesil);
+            animation: skorParlama 0.6s ease;
+        }
+        @keyframes skorParlama {
+            0%   { transform: scale(1);    background: rgba(74, 222, 128, 0.4); }
+            50%  { transform: scale(1.04); }
+            100% { transform: scale(1);    background: var(--panel-acik); }
+        }
+
+        /* Geniş ekranda skor tablosu sağda sabit dursun */
+        @media (min-width: 1100px) {
+            .skor-tablosu {
+                position: fixed;
+                top: 24px;
+                right: 24px;
+                width: 210px;
+                z-index: 50;
+            }
+        }
+
+        /* =====================================================
            SÜRE SEÇİCİ (Sınırsız / 5 / 10 / 30 sn / 1 dk)
            5 buton yan yana; telefonda sığması için daha küçük
            ===================================================== */
@@ -698,6 +771,12 @@
             </div>
         </div>
 
+        <!-- Skor tablosu: en üstte sarı "BEST", altında süre süre en iyi tıklama rekorları -->
+        <aside class="skor-tablosu" id="skorTablosu">
+            <div class="skor-baslik">🏆 BEST</div>
+            <div class="skor-liste" id="skorListe"></div>
+        </aside>
+
     </div>
 
     <!-- =====================================================
@@ -744,6 +823,7 @@
             tiklamaModu: 'sol',   // Hangi fare tuşuyla tıklanacak: 'sol' (sol tık) | 'sag' (sağ tık)
             hedefSure: 0,         // Test süresi (saniye). 0 = sınırsız. 5/10/30/60 = zamanlı test
             bitti: false,         // Zamanlı test bitti mi? (bittiyse tıklama sayılmaz)
+            rekorlar: { 5: 0, 10: 0, 30: 0, 60: 0 }, // Her süre için en iyi toplam tıklama (BEST tablosu)
         };
 
         /* -----------------------------------------------------
@@ -925,6 +1005,22 @@
            4.6) ZAMANLI TEST SONUÇ PENCERESİ
            ----------------------------------------------------- */
 
+        // Sağdaki BEST skor tablosunu çizer. vurguSure = yeni rekor kırılan süre (null = normal)
+        function skorTablosuGuncelle(vurguSure) {
+            const liste = document.getElementById('skorListe');
+            if (!liste) return;
+            const siralar = [5, 10, 30, 60];
+            const etiketler = { 5: '5 sn', 10: '10 sn', 30: '30 sn', 60: '1 dk' };
+            liste.innerHTML = siralar.map(function (s) {
+                const rekor = oyun.rekorlar[s] || 0;
+                const vurgu = (s === vurguSure) ? ' yeni' : '';
+                return '<div class="skor-satir' + vurgu + '">' +
+                       '<span class="skor-sure">' + etiketler[s] + '</span>' +
+                       '<span class="skor-deger">' + (rekor > 0 ? rekor : '—') + '</span>' +
+                       '</div>';
+            }).join('');
+        }
+
         // Zamanlı test dolduğunda çağrılır: CPS hesapla, derece bul, modalı aç
         function suresiDoldu() {
             if (oyun.bitti) return;     // İkinci kez çağrılmasın
@@ -956,6 +1052,15 @@
             document.getElementById('sureEtiket').textContent = '⏱️ Bitti';
             document.getElementById('sure').textContent = '0,00sn';
             document.getElementById('cps').textContent = cps.toFixed(1).replace('.', ',') + '/s';
+
+            // BEST rekoru: bu sürede şimdiye kadarki en iyi tıklama mı? Varsa güncelle, tabloyu parlat
+            let yeniRekor = false;
+            if (oyun.hedefSure > 0 && oyun.tiklamaSayisi > (oyun.rekorlar[oyun.hedefSure] || 0)) {
+                oyun.rekorlar[oyun.hedefSure] = oyun.tiklamaSayisi;
+                yeniRekor = true;
+            }
+            skorTablosuGuncelle(yeniRekor ? oyun.hedefSure : null);
+            kaydet();
 
             modalAc();
         }
@@ -1130,6 +1235,7 @@
                 saniyede: oyun.saniyede,
                 carpanSeviye: oyun.carpanSeviye,
                 tiklamaModu: oyun.tiklamaModu, // Sol/sağ tık tercihi
+                rekorlar: oyun.rekorlar,       // BEST rekorları
                 seviyeler: {
                     tikGucu: yukseltmeler.tikGucu.seviye,
                     otomatik: yukseltmeler.otomatik.seviye,
@@ -1149,6 +1255,15 @@
             oyun.saniyede = veri.saniyede || 0;
             oyun.carpanSeviye = veri.carpanSeviye || 0;
             oyun.tiklamaModu = veri.tiklamaModu || 'sol'; // Sol/sağ tık tercihi
+
+            // BEST rekorlarını yükle (eksik süreler 0 kabul edilir)
+            oyun.rekorlar = { 5: 0, 10: 0, 30: 0, 60: 0 };
+            if (veri.rekorlar) {
+                oyun.rekorlar[5]  = veri.rekorlar[5]  || 0;
+                oyun.rekorlar[10] = veri.rekorlar[10] || 0;
+                oyun.rekorlar[30] = veri.rekorlar[30] || 0;
+                oyun.rekorlar[60] = veri.rekorlar[60] || 0;
+            }
 
             if (veri.seviyeler) {
                 yukseltmeler.tikGucu.seviye = veri.seviyeler.tikGucu || 0;
@@ -1198,8 +1313,12 @@
 
         // Sıfırla butonu
         document.getElementById('sifirlaButonu').addEventListener('click', () => {
-            if (confirm('Tüm ilerleme silinsin mi?')) {
-                localStorage.removeItem(KAYIT_ANAHTARI);
+            if (confirm('Tüm ilerleme silinsin mi? (BEST rekorların korunur)')) {
+                // Sadece puan/yükseltmeler sıfırlansın; BEST rekorlar kalsın
+                const eski = JSON.parse(localStorage.getItem(KAYIT_ANAHTARI) || '{}');
+                localStorage.setItem(KAYIT_ANAHTARI, JSON.stringify({
+                    rekorlar: eski.rekorlar || { 5: 0, 10: 0, 30: 0, 60: 0 }
+                }));
                 location.reload(); // Sayfayı yenileyip baştan başlat
             }
         });
@@ -1232,6 +1351,7 @@
         ekraniGuncelle();
         modGuncelle();          // Sekme + buton yazısını seçili moda göre ayarla
         istatistikGuncelle(); // Süre/CPS sayaçlarını başlangıçta sıfır göster
+        skorTablosuGuncelle(); // BEST rekorlarını sağdaki tabloya yaz
     </script>
 </body>
 </html>
