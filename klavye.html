@@ -700,7 +700,10 @@
 
             <div class="alt-bilgi">
                 <div class="ipucu">💡 <b>Boşluk</b> = sonraki kelime &nbsp;•&nbsp; <b>Backspace</b> = düzelt</div>
-                <button class="yeniden-btn" id="yenidenBtn">↻ Yeniden Başla</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="yeniden-btn" id="sesBtn" title="Yanlış harf sesini aç/kapat">🔊 Ses Açık</button>
+                    <button class="yeniden-btn" id="yenidenBtn">↻ Yeniden Başla</button>
+                </div>
             </div>
 
             <!-- Tuşları yakalayan görünmez input (mobil klavye desteği) -->
@@ -1256,12 +1259,65 @@
            input DEĞİLSE A yolu, inputsa B yolu çalışır.
            ===================================================== */
 
+        /* =====================================================
+           SES EFEKTLERİ (Web Audio API — dosya gerekmez)
+           -----------------------------------------------------
+           Yanlış harfte kısa sert bir "dırt" uyarı sesi çıkar.
+           Ses bağlamı ilk tuşta oluşturulur (tarayıcı kuralı).
+           ===================================================== */
+        let sesBaglami = null;
+        let sesAcik = true;                    // Ses aç/kapa anahtarı
+
+        /* Kısa "DIRRT!" uyarı sesi: düşük frekanslı testere dalgası
+           + hızlı sönümleme = sert, dikkat çekici cırtlama */
+        function yanlisSesiCal() {
+            if (!sesAcik) return;
+            try {
+                if (!sesBaglami) sesBaglami = new (window.AudioContext || window.webkitAudioContext)();
+                if (sesBaglami.state === 'suspended') sesBaglami.resume();
+
+                const t = sesBaglami.currentTime;
+
+                /* Ana cırtlama tonu (200 -> 80 Hz düşer) */
+                const osc = sesBaglami.createOscillator();
+                const gain = sesBaglami.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, t);
+                osc.frequency.exponentialRampToValueAtTime(70, t + 0.12);
+
+                gain.gain.setValueAtTime(0.35, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+
+                osc.connect(gain).connect(sesBaglami.destination);
+                osc.start(t);
+                osc.stop(t + 0.15);
+
+                /* Üstüne kısa gürültü katmanı: daha "dertli" tını */
+                const osc2 = sesBaglami.createOscillator();
+                const gain2 = sesBaglami.createGain();
+                osc2.type = 'square';
+                osc2.frequency.setValueAtTime(140, t);
+                osc2.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+
+                gain2.gain.setValueAtTime(0.2, t);
+                gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+
+                osc2.connect(gain2).connect(sesBaglami.destination);
+                osc2.start(t);
+                osc2.stop(t + 0.12);
+            } catch (hata) { /* ses çalınamadıysa sessizce devam */ }
+        }
+
         /* Ortak: bir harf tuşunu işle (sayacı ve boyamayı yap) */
         function harfIsle(harf) {
             if (!durum.calisiyor) zamanlayiciBaslat();
             durum.tus++;
             const beklenen = akis[durum.index][durum.yazilan.length];
-            if (harf === beklenen) durum.dogruTus++;
+            if (harf === beklenen) {
+                durum.dogruTus++;
+            } else {
+                yanlisSesiCal();               // DIRRT! yanlış harf uyarısı
+            }
             durum.yazilan += harf;
             harfleriBoya();
         }
@@ -1339,6 +1395,18 @@
            mobilde tekrar dokununca değer temiz gelsin */
         girisiEl.addEventListener('focus', function () { girisiEl.value = ''; });
 
+        /* TELEFON YOLUNDA yanlış harf sesi: input değerinin kelimeyle
+           eşleşmeyen ilk farkında çal */
+        girisiEl.addEventListener('input', function () {
+            if (durum.bitti) return;
+            const v = girisiEl.value.trim();
+            if (v.length === 0) return;
+            const kelime = akis[durum.index];
+            if (v.length <= kelime.length && v[v.length - 1] !== kelime[v.length - 1]) {
+                yanlisSesiCal();
+            }
+        });
+
         /* Ekrana HERHANGİ bir yere dokunmak = klavyeyi aç (telefon).
            Bilgisayarda gereksizdir ama zarar da vermez. */
         function odakla() {
@@ -1407,6 +1475,18 @@
         });
 
         /* =====================================================
+           13b) SES BUTONU (yanlış harf uyarısını aç/kapat)
+           ===================================================== */
+        const sesBtnEl = document.getElementById('sesBtn');
+
+        sesBtnEl.addEventListener('click', function () {
+            sesAcik = !sesAcik;
+            sesBtnEl.textContent = sesAcik ? '🔊 Ses Açık' : '🔇 Ses Kapalı';
+            localStorage.setItem('klavye_ses', sesAcik ? '1' : '0');
+            if (sesAcik) yanlisSesiCal();   /* örnek ses çal */
+        });
+
+        /* =====================================================
            14) TEMA BUTONU (açılır panel)
            ===================================================== */
         const temaBtnEl = document.getElementById('temaBtn');
@@ -1434,6 +1514,13 @@
 
                 genelRekor = parseInt(localStorage.getItem(REKOR_GENEL_KEY)) || 0;
                 document.getElementById('genelRekor').textContent = genelRekor;
+
+                /* Ses tercihi kayıtlıysa uygula */
+                const sesKayit = localStorage.getItem('klavye_ses');
+                if (sesKayit === '0') {
+                    sesAcik = false;
+                    sesBtnEl.textContent = '🔇 Ses Kapalı';
+                }
 
                 /* Kaydedilmiş temayı yükle (yoksa varsayılan siyah) */
                 const kayitliTema = localStorage.getItem(TEMA_ANAHTARI);
