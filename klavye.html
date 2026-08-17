@@ -70,7 +70,7 @@
 
         .baslik p { font-size: 13px; color: var(--yazi-ikincil); margin-top: 4px; }
 
-        /* ===== SEVİYE ŞERİDİ (12 nokta, otomatik ilerler) ===== */
+        /* ===== SEVİYE ŞERİDİ (aktif seviye + kalan süre) ===== */
         .seviye-seridi {
             background: var(--panel);
             border: 1px solid var(--kenarlik);
@@ -116,6 +116,129 @@
         }
 
         .seviye-not { font-size: 11px; color: var(--yazi-ikincil); margin-top: 8px; }
+
+        /* ===== SEVİYE SEÇİM KARTLARI ===== */
+        .seviyeler {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .seviye-kart {
+            background: var(--panel);
+            border: 2px solid var(--kenarlik);
+            border-radius: 12px;
+            padding: 8px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.15s, border-color 0.15s, background 0.15s;
+        }
+
+        .seviye-kart:hover { background: var(--panel-acik); transform: translateY(-2px); }
+
+        .seviye-kart.secili {
+            border-color: var(--vurgu-2);
+            background: var(--panel-acik);
+            box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.15);
+        }
+
+        .seviye-kart .no { font-size: 16px; font-weight: 800; }
+        .seviye-kart.secili .no { color: var(--vurgu-2); }
+
+        .seviye-kart .ad { font-size: 10px; color: var(--yazi-ikincil); margin-top: 2px; }
+
+        .seviye-kart.kelime-kart { border-style: dashed; }
+        .seviye-kart.kelime-kart .no { color: var(--vurgu); }
+
+        /* ===== SONUÇ EKRANI (modal) ===== */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 50;
+        }
+
+        .modal.acik { display: flex; }
+
+        .modal-kart {
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 18px;
+            padding: 24px 20px;
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+            box-shadow: 0 20px 60px var(--golge);
+            animation: yukaridan 0.25s ease-out;
+        }
+
+        @keyframes yukaridan {
+            from { transform: translateY(24px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .sonuc-baslik { font-size: 20px; font-weight: 800; }
+
+        /* Önerilen seviye rozeti */
+        .oneri-rozeti {
+            margin-top: 14px;
+            background: var(--panel-acik);
+            border: 2px solid var(--vurgu-2);
+            border-radius: 16px;
+            padding: 14px 10px;
+        }
+
+        .oneri-etiket { font-size: 11px; font-weight: 700; color: var(--yazi-ikincil); letter-spacing: 1px; }
+
+        .oneri-seviye {
+            font-size: clamp(22px, 7vw, 30px);
+            font-weight: 800;
+            margin-top: 4px;
+        }
+
+        .oneri-seviye b { color: var(--vurgu); }
+        .oneri-seviye .ok { color: var(--vurgu-2); }
+
+        .oneri-not { font-size: 12px; color: var(--yazi-ikincil); margin-top: 6px; }
+
+        .sonuc-izgara {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .sonuc-kutu {
+            background: var(--panel-acik);
+            border-radius: 12px;
+            padding: 10px 6px;
+        }
+
+        .sonuc-kutu-deger { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .sonuc-kutu-etiket { font-size: 10px; color: var(--yazi-ikincil); margin-top: 2px; }
+
+        .sonuc-butonlar { display: flex; gap: 8px; margin-top: 18px; }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: filter 0.15s, background 0.15s;
+        }
+
+        .btn-birincil { background: var(--vurgu-2); color: #0f1115; }
+        .btn-birincil:hover { filter: brightness(1.1); }
+
+        .btn-ikincil { background: var(--panel-acik); color: var(--yazi); border: 1px solid var(--kenarlik); }
+        .btn-ikincil:hover { background: #2c313c; }
 
         /* ===== TEST ALANI ===== */
         .test-alani {
@@ -306,6 +429,9 @@
             .kelime-akis { font-size: 22px; line-height: 30px; gap: 10px 22px; letter-spacing: 4px; }
             .kelime-alani { height: 120px; }
             .alt-istatistikler { grid-template-columns: repeat(3, 1fr); }
+            .seviyeler { grid-template-columns: repeat(5, 1fr); }
+            .seviye-kart .no { font-size: 13px; }
+            .seviye-kart .ad { font-size: 8px; }
         }
     </style>
 </head>
@@ -317,14 +443,19 @@
             <p>Grupları yaz, boşlukla geç — seviyeler otomatik yükselir</p>
         </header>
 
+        <!-- ============ SEVİYE SEÇİMİ (9 harf + 1 kelime) ============ -->
+        <div class="seviyeler" id="seviyelerKapsayici">
+            <!-- Kartlar JavaScript ile doldurulur -->
+        </div>
+
         <!-- ============ SEVİYE ŞERİDİ ============ -->
         <div class="seviye-seridi">
             <div class="seviye-ust">
                 <div class="seviye-adi" id="seviyeAdi">Seviye <b>1</b> — Isınma</div>
-                <div class="seviye-adim" id="seviyeAdim">Tur: 0/8</div>
+                <div class="seviye-adim" id="kalanSure">⏱️ 60 sn</div>
             </div>
             <div class="seviye-noktalar" id="seviyeNoktalar"></div>
-            <div class="seviye-not" id="seviyeNot">8 grubu doğru yaz → seviye atla</div>
+            <div class="seviye-not" id="seviyeNot">60 saniye boyunca yaz — sonunda seviyen söylenir</div>
         </div>
 
         <!-- ============ TEST ALANI ============ -->
@@ -367,8 +498,38 @@
         </div>
     </div>
 
-    <!-- Seviye atlama bildirimi -->
-    <div class="bildirim" id="bildirim">🎉 Seviye 2!</div>
+    <!-- ============ SONUÇ EKRANI ============ -->
+    <div class="modal" id="sonucModal">
+        <div class="modal-kart">
+            <div class="sonuc-baslik">⏱️ Süre Doldu!</div>
+
+            <div class="oneri-rozeti">
+                <div class="oneri-etiket">HZINA GÖRE SENİN SEVİYEN</div>
+                <div class="oneri-seviye" id="oneriSeviye">Seviye <b>1</b></div>
+                <div class="oneri-not" id="oneriNot"></div>
+            </div>
+
+            <div class="sonuc-izgara">
+                <div class="sonuc-kutu">
+                    <div class="sonuc-kutu-deger" id="sonucHarf" style="color: var(--yesil);">0</div>
+                    <div class="sonuc-kutu-etiket">Doğru Harf</div>
+                </div>
+                <div class="sonuc-kutu">
+                    <div class="sonuc-kutu-deger" id="sonucHiz" style="color: var(--vurgu-2);">0.0</div>
+                    <div class="sonuc-kutu-etiket">Harf/Saniye</div>
+                </div>
+                <div class="sonuc-kutu">
+                    <div class="sonuc-kutu-deger" id="sonucDogruluk" style="color: var(--vurgu);">%100</div>
+                    <div class="sonuc-kutu-etiket">Doğruluk</div>
+                </div>
+            </div>
+
+            <div class="sonuc-butonlar">
+                <button class="btn btn-birincil" id="tekrarBtn">▶ Tekrar Dene</button>
+                <button class="btn btn-ikincil" id="oneriBtn">Önerileni Aç</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         /* =====================================================
@@ -407,35 +568,69 @@
         }
 
         /* =====================================================
-           2) 12 SEVİYE
+           2) 10 SEVİYE: 9 HARF + 1 KELİME
            -----------------------------------------------------
-           min/max: grubun güçlük aralığı. Seviye arttıkça
-           aralık yukarı kayar -> harfler daha uzak ve karışık.
-           tuslar: o seviyede açılan tuş havuzu.
+           1-9: harf grupları (min/max güçlük aralığı yükselir)
+           10:  normal Türkçe kelimeler
+           hizEsik: harf/saniye hızı bu seviyeye "yeterli" sayılır
+                    (sonuç ekranındaki öneri bunu kullanır)
            ===================================================== */
         const SEVIYELER = [
-            { ad: 'Isınma',        min: 0.0, max: 1.5, tuslar: 'asdfjklşgh' },
-            { ad: 'Temel',         min: 0.0, max: 2.0, tuslar: 'asdfjklşghrtuvbnmy' },
-            { ad: 'Alışma',        min: 0.0, max: 2.4, tuslar: 'asdfjklşghrtuvbnmyeımcö' },
-            { ad: 'Orta',          min: 0.0, max: 2.8, tuslar: 'asdfjklşghrtuvbnmyeımcöwoxçl' },
-            { ad: 'Genişleme',     min: 0.0, max: 3.2, tuslar: 'asdfjklşghrtuvbnmyeımcöwoxçpziş' },
-            { ad: 'Zorlanma',      min: 0.0, max: 3.6, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
-            { ad: 'Hız',           min: 0.8, max: 4.0, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
-            { ad: 'Zor',           min: 1.4, max: 4.2, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
-            { ad: 'Çok Zor',       min: 2.0, max: 4.4, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
-            { ad: 'Ustalık',       min: 2.6, max: 4.6, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
-            { ad: 'Efsane',        min: 3.2, max: 4.8, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
-            { ad: 'Klavye Babası', min: 3.8, max: 99,  tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' }
+            { no: 1,  ad: 'Isınma',     min: 0.0, max: 1.5, tuslar: 'asdfjklşgh',              hizEsik: 1.2 },
+            { no: 2,  ad: 'Temel',      min: 0.0, max: 2.0, tuslar: 'asdfjklşghrtuvbnmy',      hizEsik: 1.6 },
+            { no: 3,  ad: 'Alışma',     min: 0.0, max: 2.4, tuslar: 'asdfjklşghrtuvbnmyeımcö',  hizEsik: 2.0 },
+            { no: 4,  ad: 'Orta',       min: 0.0, max: 2.8, tuslar: 'asdfjklşghrtuvbnmyeımcöwoxçl', hizEsik: 2.4 },
+            { no: 5,  ad: 'Genişleme',  min: 0.0, max: 3.2, tuslar: 'asdfjklşghrtuvbnmyeımcöwoxçpziş', hizEsik: 2.8 },
+            { no: 6,  ad: 'Zorlanma',   min: 0.0, max: 3.6, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç', hizEsik: 3.2 },
+            { no: 7,  ad: 'Hız',        min: 0.8, max: 4.0, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç', hizEsik: 3.6 },
+            { no: 8,  ad: 'Zor',        min: 1.4, max: 4.2, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç', hizEsik: 4.0 },
+            { no: 9,  ad: 'Çok Zor',    min: 2.0, max: 4.4, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç', hizEsik: 4.5 },
+            { no: 10, ad: 'Kelimeler',  kelime: true,                                        hizEsik: 5.0 }
         ];
 
-        const TUR_UZUNLUGU = 8;                 // 8 grup = 1 tur, sonra seviye kontrolü
-        const SEV_BAS = 0.7;                    // tur doğruluğu en az %70 olmalı
+        /* 10. seviye kelimeleri: normal Türkçe kelimeler */
+        const KELIMELER = [
+            'bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi', 'sekiz', 'dokuz', 'on',
+            'su', 'ev', 'kitap', 'kalem', 'masa', 'sandalye', 'pencere', 'kapı', 'duvar', 'oda',
+            'gün', 'ay', 'yıl', 'hafta', 'saat', 'dakika', 'saniye', 'sabah', 'akşam', 'gece',
+            'anne', 'baba', 'kardeş', 'arkadaş', 'komşu', 'öğretmen', 'öğrenci', 'doktor', 'mühendis', 'işçi',
+            'kırmızı', 'mavi', 'yeşil', 'sarı', 'siyah', 'beyaz', 'turuncu', 'mor', 'pembe', 'kahverengi',
+            'yürümek', 'koşmak', 'yüzmek', 'okumak', 'yazmak', 'dinlemek', 'konuşmak', 'görmek', 'duymak', 'anlamak',
+            'Türkiye', 'İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Konya', 'Adana', 'Kocaeli', 'Mersin',
+            'bilgisayar', 'klavye', 'ekran', 'fare', 'internet', 'telefon', 'mesaj', 'program', 'dosya', 'sistem',
+            'çünkü', 'fakat', 'ancak', 'yine', 'gene', 'hemen', 'şimdi', 'sonra', 'önce', 'herzaman',
+            'güzel', 'kötü', 'büyük', 'küçük', 'uzun', 'kısa', 'geniş', 'dar', 'yüksek', 'alçak'
+        ];
 
-        /* Seviyeye uygun 3-4 harflik grup üretir.
-           Havuzdan rastgele harfler seçer, grubun güçlük
-           puanı seviye aralığındaysa kabul eder. */
+        /* Hıza göre önerilecek seviyeyi bul:
+           harf/sn, o seviyenin hız eşiğini tutturuyorsa o seviyedesin */
+        function oneriBul(hiz, dogruluk) {
+            /* Doğruluk çok düşükse hız ne olursa olsun bir seviye geri */
+            if (dogruluk < 0.70) {
+                let s = 1;
+                for (const sv of SEVIYELER) if (hiz >= sv.hizEsik) s = sv.no;
+                return Math.max(1, s - 1) || 1;
+            }
+            let s = 1;
+            for (const sv of SEVIYELER) {
+                if (hiz >= sv.hizEsik) s = sv.no;
+            }
+            return s;
+        }
+
+        const SURE = 60;                        // Test süresi: 60 saniye
+
+        /* Seviyeye uygun grup üretir.
+           1-9: 3-4 harflik gruplar (güçlük aralığına göre)
+           10: normal Türkçe kelime */
         function grupUret() {
             const sv = SEVIYELER[durum.seviye - 1];
+
+            /* 10. SEVİYE: normal kelime */
+            if (sv.kelime) {
+                return KELIMELER[Math.floor(Math.random() * KELIMELER.length)];
+            }
+
             const havuz = sv.tuslar.split('');
             const uzunluk = Math.random() < 0.5 ? 3 : 4;
 
@@ -469,8 +664,7 @@
             calisiyor: false, bitti: false,
             baslangic: null, zamanId: null,
             harf: 0, hatali: 0,             // toplam doğru harf / hatalı tuş
-            turGrup: 0,                     // tur içinde tamamlanan grup
-            turDogru: 0, turToplam: 0       // tur istatistikleri
+            tus: 0                          // toplam tuş vuruşu (doğruluk için)
         };
 
         const kelimeAkisiEl = document.getElementById('kelimeAkisi');
@@ -570,25 +764,18 @@
         }
 
         /* =====================================================
-           6) GRUP TAMAMLAMA + TUR/SEVİYE İLERLEMESİ
+           6) GRUP TAMAMLAMA
            ===================================================== */
         function grupGonder() {
             const kelime = durum.akis[durum.index];
             const kutu = durum.kelimeEls[durum.index];
             const dogruMu = durum.yazilan === kelime;
 
-            /* Tur istatistiği: yazılan harfler */
-            for (let i = 0; i < durum.yazilan.length; i++) {
-                durum.turToplam++;
-                if (durum.yazilan[i] === kelime[i]) durum.turDogru++;
-            }
-
             kutu.classList.remove('aktif', 'tamamlandi');
             kutu.classList.add(dogruMu ? 'td' : 'ty');
 
             durum.index++;
             durum.yazilan = '';
-            durum.turGrup++;
 
             const yeni = durum.kelimeEls[durum.index];
             if (yeni) { yeni.classList.add('aktif'); harfleriBoya(); }
@@ -598,38 +785,10 @@
 
             /* Akış tükeniyorsa uzat */
             if (durum.index >= durum.akis.length - 8) akisDoldur(12, false);
-
-            /* Tur bitti mi? */
-            if (durum.turGrup >= TUR_UZUNLUGU) turDegerlendir();
-        }
-
-        function turDegerlendir() {
-            const oran = durum.turToplam > 0 ? durum.turDogru / durum.turToplam : 0;
-
-            if (oran >= SEV_BAS && durum.seviye < 12) {
-                durum.seviye++;
-                localStorage.setItem('drill_seviye', String(durum.seviye));
-                bildirGoster('🎉 Seviye ' + durum.seviye + ' — ' + SEVIYELER[durum.seviye - 1].ad + '!');
-                akisDoldur(20, true);                       // yeni seviyenin grupları
-                durum.index = 0; durum.yazilan = '';
-                durum.kelimeEls[0].classList.add('aktif');
-                harfleriBoya();
-            } else if (durum.seviye === 12 && oran >= SEV_BAS) {
-                bildirGoster('👑 Zirvedesin! Klavye Babası');
-            } else {
-                bildirGoster('💪 Doğruluk %' + Math.round(oran * 100) + ' — aynı seviyede devam');
-            }
-
-            /* Tur sayaçlarını sıfırla */
-            durum.turGrup = 0;
-            durum.turDogru = 0;
-            durum.turToplam = 0;
-
-            seviyeSeridiCiz();
         }
 
         /* =====================================================
-           7) SAYAÇ (harf, saniye, harf/saniye)
+           7) SAYAÇ + 60 SANİYE ZAMANLAYICI
            ===================================================== */
         function sayacGuncelle() {
             document.getElementById('harfSayisi').textContent = durum.harf;
@@ -637,6 +796,13 @@
             document.getElementById('gecenSure').textContent = gecen.toFixed(1);
             document.getElementById('harfHiz').textContent =
                 gecen > 0 ? (durum.harf / gecen).toFixed(1) : '0.0';
+
+            /* Kalan süre şeritte */
+            if (durum.calisiyor) {
+                const kalan = Math.max(0, SURE - gecen);
+                document.getElementById('kalanSure').textContent = '⏱️ ' + Math.ceil(kalan) + ' sn';
+                if (kalan <= 0) testiBitir();
+            }
         }
 
         function zamanlayiciBaslat() {
@@ -647,17 +813,51 @@
         }
 
         /* =====================================================
-           8) SEVİYE ŞERİDİ + BİLDİRİM
+           7b) TESTİ BİTİR + ÖNERİLEN SEVİYE
+           -----------------------------------------------------
+           60 saniye dolunca: harf/sn hızına ve doğruluğa
+           bakılarak "senin seviyen" hesaplanır ve modalda
+           gösterilir.
+           ===================================================== */
+        function testiBitir() {
+            clearInterval(durum.zamanId);
+            durum.calisiyor = false;
+            durum.bitti = true;
+            girisiEl.blur();
+
+            const gecen = durum.baslangic ? (Date.now() - durum.baslangic) / 1000 : SURE;
+            const hiz = gecen > 0 ? durum.harf / gecen : 0;
+            const dogruluk = durum.tus > 0 ? durum.harf / durum.tus : 1;
+            const oneri = oneriBul(hiz, dogruluk);
+            const oneriSv = SEVIYELER[oneri - 1];
+
+            /* Öneri rozetini doldur */
+            document.getElementById('oneriSeviye').innerHTML =
+                'Seviye <b>' + oneri + '</b> <span class="ok">— ' + oneriSv.ad + '</span>';
+            document.getElementById('oneriNot').textContent =
+                oneri === 10
+                    ? '👑 Harika! Kelime seviyesine hazırsın.'
+                    : 'Hedefin: ' + oneriSv.hizEsik + ' harf/sn (şu an: ' + hiz.toFixed(1) + ')';
+
+            document.getElementById('sonucHarf').textContent = durum.harf;
+            document.getElementById('sonucHiz').textContent = hiz.toFixed(1);
+            document.getElementById('sonucDogruluk').textContent =
+                '%' + Math.round(dogruluk * 100);
+
+            document.getElementById('sonucModal').classList.add('acik');
+        }
+
+        /* =====================================================
+           8) SEVİYE ŞERİDİ + SEVİYE KARTLARI + BİLDİRİM
            ===================================================== */
         function seviyeSeridiCiz() {
             document.getElementById('seviyeAdi').innerHTML =
-                'Seviye <b>' + durum.seviye + '</b> — ' + SEVIYELER[durum.seviye - 1].ad;
-            document.getElementById('seviyeAdim').textContent =
-                'Tur: ' + durum.turGrup + '/' + TUR_UZUNLUGU;
+                'Seviye <b>' + durum.seviye + '</b> — ' + SEVIYELER[durum.seviye - 1].ad +
+                (SEVIYELER[durum.seviye - 1].kelime ? ' 📝' : '');
 
             const yol = document.getElementById('seviyeNoktalar');
             yol.innerHTML = '';
-            for (let i = 1; i <= 12; i++) {
+            for (let i = 1; i <= 10; i++) {
                 const n = document.createElement('div');
                 n.className = 'nokta' +
                     (i < durum.seviye ? ' gecti' : '') +
@@ -667,20 +867,38 @@
             }
         }
 
-        let bildirimZaman = null;
-        function bildirGoster(metin) {
-            const el = document.getElementById('bildirim');
-            el.textContent = metin;
-            el.classList.add('gorunur');
-            clearTimeout(bildirimZaman);
-            bildirimZaman = setTimeout(() => el.classList.remove('gorunur'), 2600);
+        /* Seviye seçim kartları: kullanıcı SEVİYEYİ SEÇER */
+        function seviyeKartlariCiz() {
+            const kapsayici = document.getElementById('seviyelerKapsayici');
+            kapsayici.innerHTML = '';
+
+            SEVIYELER.forEach(function (sv) {
+                const kart = document.createElement('div');
+                kart.className = 'seviye-kart' +
+                    (sv.no === durum.seviye ? ' secili' : '') +
+                    (sv.kelime ? ' kelime-kart' : '');
+                kart.innerHTML =
+                    '<div class="no">' + sv.no + (sv.kelime ? ' 📝' : '') + '</div>' +
+                    '<div class="ad">' + sv.ad + '</div>';
+
+                kart.addEventListener('click', function () {
+                    durum.seviye = sv.no;
+                    localStorage.setItem('drill_seviye', String(sv.no));
+                    seviyeKartlariCiz();
+                    sifirla();
+                });
+
+                kapsayici.appendChild(kart);
+            });
         }
 
         /* =====================================================
            9) TUŞ YAKALAMA (bilgisayar + telefon, çift yol)
            ===================================================== */
         function harfIsle(harf) {
+            if (durum.bitti) return;
             if (!durum.calisiyor) zamanlayiciBaslat();
+            durum.tus++;
             const beklenen = durum.akis[durum.index][durum.yazilan.length];
             if (harf === beklenen) durum.harf++;
             else { durum.hatali++; yanlisSesiCal(); }
@@ -689,6 +907,11 @@
         }
 
         document.addEventListener('keydown', function (e) {
+            /* Modal açıkken: Enter = tekrar dene */
+            if (document.getElementById('sonucModal').classList.contains('acik')) {
+                if (e.key === 'Enter') sifirla();
+                return;
+            }
             if (e.key === 'Escape') { sifirla(); return; }
             if (durum.bitti) return;
             if (e.target === girisiEl) return;             // telefon yoluna bırak
@@ -763,7 +986,7 @@
            ===================================================== */
         function sifirla() {
             clearInterval(durum.zamanId);
-            const sv = durum.seviye;             // seviye korunur
+            const sv = durum.seviye;             // seçilen seviye korunur
             durum = {
                 seviye: sv,
                 akis: [], kelimeEls: [],
@@ -771,18 +994,32 @@
                 calisiyor: false, bitti: false,
                 baslangic: null, zamanId: null,
                 harf: 0, hatali: 0,
-                turGrup: 0, turDogru: 0, turToplam: 0
+                tus: 0
             };
             akisDoldur(20, true);
             durum.kelimeEls[0].classList.add('aktif');
             harfleriBoya();
             baslaIpucuEl.classList.remove('gizli');
+            document.getElementById('sonucModal').classList.remove('acik');
+            document.getElementById('kalanSure').textContent = '⏱️ ' + SURE + ' sn';
             sayacGuncelle();
             seviyeSeridiCiz();
             odakla();
         }
 
         document.getElementById('yenidenBtn').addEventListener('click', sifirla);
+        document.getElementById('tekrarBtn').addEventListener('click', sifirla);
+
+        /* Önerilen seviyeye geç butonu */
+        document.getElementById('oneriBtn').addEventListener('click', function () {
+            const oneriNo = parseInt(
+                document.getElementById('oneriSeviye').querySelector('b').textContent
+            );
+            durum.seviye = oneriNo;
+            localStorage.setItem('drill_seviye', String(oneriNo));
+            seviyeKartlariCiz();
+            sifirla();
+        });
 
         const sesBtnEl = document.getElementById('sesBtn');
         function sesBtnGuncelle() {
@@ -797,8 +1034,9 @@
 
         (function basla() {
             const kayitli = parseInt(localStorage.getItem('drill_seviye'));
-            if (kayitli >= 1 && kayitli <= 12) durum.seviye = kayitli;
+            if (kayitli >= 1 && kayitli <= 10) durum.seviye = kayitli;
             sesBtnGuncelle();
+            seviyeKartlariCiz();
             sifirla();
         })();
     </script>
