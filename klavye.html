@@ -1,41 +1,32 @@
 <!DOCTYPE html>
 <!-- =========================================================
-     10 PARMAK KLAVYE - YAZMA HIZI ANTRENMANI (TEK DOSYA)
+     10 PARMAK ALIŞTIRMA (TEK DOSYA)
      ---------------------------------------------------------
-     - 60 saniyelik hız testi
-     - Ekrana rastgele kelimeler gelir, ilerledikçe zorlaşır
-     - Seviye SEÇİLMEZ: seviye, yazdığın kelime sayısından
-       otomatik belirlenir ve sonuç ekranında gösterilir
-     - Seviye sınırları: <10 / 10 / 18 / 30 / 60+ kelime
-     - Karanlık temalı ve responsive (telefon + bilgisayar)
-     - Tüm kod (HTML + CSS + JavaScript) bu tek dosyanın içindedir
+     - Ekranda 3-4 harflik gruplar yan yana, aralarında boşluk
+     - 12 seviye: seviye arttıkça harfler daha UZAK ve KARIŞIK
+       (1: ev sırası komşuları -> 12: q ç z ü gibi köşe harfleri)
+     - Altta sayaç: kaç saniyede kaç harf yazdığın
+     - Yanlış harfte "dırt" uyarı sesi
+     - Tıklamaya gerek yok, direkt yaz
      ========================================================== -->
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-
-    <!-- viewport: Telefonlarda doğru ölçekleme, yanlışlıkla yakınlaşmayı engeller -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <!-- Arama motorlarına: indeksleme -->
     <meta name="robots" content="noindex, nofollow">
-
-    <title>10 Parmak Klavye — Yazma Hızı Antrenmanı</title>
+    <title>10 Parmak Alıştırma — Harf Antrenmanı</title>
 
     <style>
-        /* =====================================================
-           RENK AYARLARI (Karanlık Tema - index.html ile uyumlu)
-           ===================================================== */
         :root {
             --arka-plan: #0f1115;
             --panel: #1a1d24;
             --panel-acik: #232730;
             --yazi: #f2f4f7;
             --yazi-ikincil: #8b93a7;
-            --vurgu: #ffc93c;          /* Sarı: süre ve başlık */
-            --vurgu-2: #4cc9f0;         /* Mavi: butonlar */
-            --yesil: #4ade80;           /* Doğru */
-            --kirmizi: #f87171;         /* Yanlış */
+            --vurgu: #ffc93c;
+            --vurgu-2: #4cc9f0;
+            --yesil: #4ade80;
+            --kirmizi: #f87171;
             --kenarlik: #2c313c;
             --golge: rgba(0, 0, 0, 0.5);
         }
@@ -64,13 +55,11 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
-        /* =====================================================
-           BAŞLIK
-           ===================================================== */
-        .baslik { text-align: center; padding: 14px 0 6px; }
+        /* ===== BAŞLIK ===== */
+        .baslik { text-align: center; padding: 12px 0 2px; }
 
         .baslik h1 {
             font-size: clamp(20px, 6vw, 30px);
@@ -79,97 +68,46 @@
             letter-spacing: 0.5px;
         }
 
-        .baslik p {
-            font-size: 13px;
-            color: var(--yazi-ikincil);
-            margin-top: 4px;
-        }
+        .baslik p { font-size: 13px; color: var(--yazi-ikincil); margin-top: 4px; }
 
-        /* =====================================================
-           İLERLEME YOLU (seviye seçimi yok — otomatik)
-           Kelimeler yazıldıkça zorlaşır; mevcut seviye buradan
-           kullanıcıya canlı olarak gösterilir.
-           ===================================================== */
-        .ilerleme-yolu {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 4px;
+        /* ===== SEVİYE ŞERİDİ (12 nokta, otomatik ilerler) ===== */
+        .seviye-seridi {
             background: var(--panel);
             border: 1px solid var(--kenarlik);
             border-radius: 14px;
-            padding: 10px 14px;
+            padding: 12px 14px;
         }
 
-        .durak {
-            flex: 1;
-            text-align: center;
-            opacity: 0.4;
-            transition: opacity 0.3s, transform 0.3s;
-        }
+        .seviye-ust { display: flex; justify-content: space-between; align-items: baseline; }
 
-        .durak.aktif-durak {
-            opacity: 1;
-            transform: scale(1.12);
-        }
-
-        .durak.gectim {
-            opacity: 1;
-        }
-
-        .durak-emoji { font-size: 20px; line-height: 1; }
-
-        .durak-bilgi {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--yazi-ikincil);
-            margin-top: 4px;
-        }
-
-        .durak.aktif-durak .durak-bilgi { color: var(--vurgu-2); }
-        .durak.gectim .durak-bilgi { color: var(--yesil); }
-
-        .durak-ok {
-            color: var(--kenarlik);
-            font-size: 14px;
-            flex: 0 0 auto;
-            padding: 0 2px;
-        }
-
-        /* =====================================================
-           ÜST İSTATİSTİK ÇUBUĞU (süre, doğru, yanlış, hedef)
-           ===================================================== */
-        .istatistikler {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-
-        .istat {
-            background: var(--panel);
-            border: 1px solid var(--kenarlik);
-            border-radius: 12px;
-            padding: 10px 8px;
-            text-align: center;
-        }
-
-        .istat-deger {
-            font-size: clamp(18px, 4.5vw, 26px);
+        .seviye-adi {
+            font-size: 15px;
             font-weight: 800;
-            font-variant-numeric: tabular-nums;
         }
 
-        .istat-etiket { font-size: 10px; color: var(--yazi-ikincil); margin-top: 2px; }
+        .seviye-adi b { color: var(--vurgu-2); }
 
-        .sure-kutusu .istat-deger { color: var(--vurgu); }
-        .dogru-kutusu .istat-deger { color: var(--yesil); }
-        .yanlis-kutusu .istat-deger { color: var(--kirmizi); }
-        .hedef-kutusu .istat-deger { color: var(--vurgu-2); }
+        .seviye-adim { font-size: 12px; color: var(--yazi-ikincil); }
 
-        /* Süre azaldıkça son 10 saniyede kırmızıya döner */
-        .sure-kutusu.son-10 .istat-deger {
-            color: var(--kirmizi);
-            animation: nabiz 1s infinite;
+        .seviye-noktalar {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .nokta {
+            flex: 1;
+            height: 10px;
+            border-radius: 6px;
+            background: var(--panel-acik);
+            border: 1px solid var(--kenarlik);
+        }
+
+        .nokta.gecti { background: var(--yesil); border-color: var(--yesil); }
+        .nokta.simdiki {
+            background: var(--vurgu);
+            border-color: var(--vurgu);
+            animation: nabiz 1.4s infinite;
         }
 
         @keyframes nabiz {
@@ -177,67 +115,42 @@
             50% { opacity: 0.45; }
         }
 
-        /* =====================================================
-           TEST ALANI (kelimelerin göründüğü kutu)
-           ===================================================== */
+        .seviye-not { font-size: 11px; color: var(--yazi-ikincil); margin-top: 8px; }
+
+        /* ===== TEST ALANI ===== */
         .test-alani {
-            background: var(--panel);
+            background: #000000;
             border: 1px solid var(--kenarlik);
             border-radius: 16px;
-            padding: 18px 16px 14px;
+            padding: 18px 16px 12px;
             position: relative;
             overflow: hidden;
         }
 
-        /* Süre ilerleme çubuğu (en üstte ince çizgi) */
-        .sure-cubugu {
-            height: 5px;
-            background: var(--panel-acik);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 14px;
-        }
-
-        .sure-cubugu-dolgu {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--vurgu-2), var(--vurgu));
-            border-radius: 10px;
-            transition: width 0.1s linear;
-        }
-
-        /* Kelime akışının görüneceği kutu: 3 satır yüksekliği, taşanlar gizli */
         .kelime-alani {
-            height: 138px;                 /* 3 satır x 46px */
+            height: 138px;
             overflow: hidden;
             position: relative;
-            cursor: text;
         }
 
         .kelime-akis {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px 14px;                /* satır ve kelime arası boşluk */
+            gap: 14px 30px;      /* grup arası geniş boşluk = yazılacak boşluk */
             font-family: 'Consolas', 'JetBrains Mono', 'Courier New', monospace;
-            font-size: 24px;
-            line-height: 34px;
+            font-size: 30px;
+            line-height: 40px;
+            font-weight: 700;
+            letter-spacing: 6px;
             transition: transform 0.15s ease-out;
             will-change: transform;
         }
 
-        .kelime { display: inline-flex; letter-spacing: 1px; }
+        .kelime { display: inline-flex; letter-spacing: normal; }
 
-        /* Varsayılanlar (tema uygulanmadıysa): koyu tema değerleri */
-        .kelime .harf { color: var(--yazi-ikincil); transition: color 0.05s; }
+        .kelime .harf { color: rgba(242, 244, 247, 0.45); transition: color 0.05s; }
         .kelime.aktif .harf { color: var(--yazi); }
 
-        /* Tema uygulandığında: harfler tema yazı rengini alır.
-           --tema-ikincil tanımlıysa (tema seçilmişse) o kazanır. */
-        .test-alani .kelime .harf { color: var(--tema-ikincil, var(--yazi-ikincil)); }
-        .test-alani .kelime.aktif .harf { color: var(--tema-yazi, var(--yazi)); }
-
-        /* Yazılan harfler: yeşil = doğru, kırmızı = yanlış.
-           Açık zeminlerde yeşil/kırmızı koyulaştırılmış ton kullan. */
         .kelime .harf.d { color: var(--yesil); }
         .kelime .harf.y {
             color: var(--kirmizi);
@@ -245,37 +158,24 @@
             border-radius: 3px;
         }
 
-        /* Beyaz gibi açık zeminlerde doygun renkler okunmaz -> koyu tonlar */
-        .test-alani.acik-zemin .kelime .harf.d { color: #15803d; }
-        .test-alani.acik-zemin .kelime .harf.y {
-            color: #b91c1c;
-            background: rgba(185, 28, 28, 0.15);
-        }
-
-        /* Bitmiş kelimelerde çizgi rengi de zemine uysun */
-        .test-alani.acik-zemin .kelime.ty .harf { color: #b91c1c; }
-        .test-alani.acik-zemin .kelime.td .harf { color: #15803d; }
-
-        /* Yanıp sönen imleç: sıradaki harfin solunda dikey çizgi */
         .kelime .harf.bekleyen { position: relative; }
         .kelime .harf.bekleyen::before {
             content: '';
             position: absolute;
-            left: -3px;
-            top: 4px;
-            bottom: 4px;
-            width: 2.5px;
+            left: -4px;
+            top: 5px;
+            bottom: 5px;
+            width: 3px;
             border-radius: 2px;
-            background: var(--tema-yazi, var(--vurgu-2));
+            background: var(--vurgu-2);
             animation: imlec 0.9s step-end infinite;
         }
 
-        /* Kelimenin sonunda bekleyen imleç (kelime tamamen yazıldıysa) */
         .son-imlec {
-            width: 2.5px;
-            margin-left: 2px;
+            width: 3px;
+            margin-left: 3px;
             border-radius: 2px;
-            background: var(--tema-yazi, var(--vurgu-2));
+            background: var(--vurgu-2);
             display: none;
             animation: imlec 0.9s step-end infinite;
         }
@@ -287,13 +187,11 @@
             50% { opacity: 0; }
         }
 
-        /* Bitmiş kelimeler */
-        .kelime.td { opacity: 0.55; }
+        .kelime.td { opacity: 0.5; }
         .kelime.td .harf { color: var(--yesil); }
-        .kelime.ty { opacity: 0.55; }
+        .kelime.ty { opacity: 0.5; }
         .kelime.ty .harf { color: var(--kirmizi); text-decoration: line-through; }
 
-        /* Başlamadan önce "yazmaya başla" ipucu */
         .basla-ipucu {
             position: absolute;
             inset: 0;
@@ -307,16 +205,13 @@
             border-radius: 16px;
             font-size: 15px;
             font-weight: 700;
-            color: var(--yazi);
             pointer-events: none;
             transition: opacity 0.2s;
         }
 
         .basla-ipucu.kucuk { font-size: 12px; color: var(--yazi-ikincil); font-weight: 400; }
-
         .basla-ipucu.gizli { opacity: 0; }
 
-        /* Test altındaki bilgi satırı */
         .alt-bilgi {
             display: flex;
             flex-wrap: wrap;
@@ -327,15 +222,16 @@
         }
 
         .ipucu { font-size: 12px; color: var(--yazi-ikincil); }
-
         .ipucu b { color: var(--vurgu-2); }
+
+        .butonlar { display: flex; gap: 8px; }
 
         .yeniden-btn {
             background: var(--panel-acik);
             color: var(--yazi);
             border: 1px solid var(--kenarlik);
             border-radius: 10px;
-            padding: 8px 16px;
+            padding: 8px 14px;
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
@@ -344,9 +240,6 @@
 
         .yeniden-btn:hover { background: #2c313c; }
 
-        /* Tuş yakalayan görünmez input (mobil klavye desteği için).
-           NOT: pointer-events kapatılmaz — telefon klavyesinin
-           açılması için input'un dokunulabilir olması gerekir. */
         #girisi {
             position: fixed;
             bottom: 0;
@@ -358,113 +251,14 @@
             background: transparent;
             color: transparent;
             caret-color: transparent;
-            font-size: 16px;   /* iOS'un otomatik zoom yapmasını engeller */
+            font-size: 16px;
             z-index: -1;
         }
 
-        /* Parmak yerleşimi hatırlatması */
-        .parmak-ipucu {
-            text-align: center;
-            font-size: 12px;
-            color: var(--yazi-ikincil);
-            background: var(--panel);
-            border: 1px dashed var(--kenarlik);
-            border-radius: 12px;
-            padding: 10px;
-        }
-
-        .parmak-ipucu b { color: var(--vurgu); letter-spacing: 2px; }
-
-        /* =====================================================
-           TEMA SEÇİCİ (üst taraftaki renk kutusu)
-           Kelimelerin göründüğü alanın arka planını değiştirir.
-           ===================================================== */
-        .tema-kapsayici {
-            position: relative;
-            text-align: center;
-        }
-
-        .tema-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--panel);
-            border: 1px solid var(--kenarlik);
-            border-radius: 12px;
-            color: var(--yazi);
-            padding: 9px 16px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .tema-btn:hover { background: var(--panel-acik); }
-
-        .tema-btn .renk-yuvarlak {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.35);
-            display: inline-block;
-        }
-
-        /* Açılır renk paneli */
-        .tema-panel {
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--panel);
-            border: 1px solid var(--kenarlik);
-            border-radius: 14px;
-            padding: 12px;
-            display: none;
-            gap: 10px;
-            z-index: 30;
-            box-shadow: 0 12px 32px var(--golge);
-        }
-
-        .tema-panel.acik { display: inline-flex; }
-
-        .renk-secenek {
-            width: 38px;
-            height: 38px;
-            border-radius: 12px;
-            border: 2px solid transparent;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.12s, border-color 0.12s;
-        }
-
-        .renk-secenek:hover { transform: scale(1.12); }
-
-        .renk-secenek.secili-renk {
-            border-color: var(--vurgu);
-            box-shadow: 0 0 0 3px rgba(255, 201, 60, 0.25);
-        }
-
-        .renk-secenek.secili-renk::after {
-            content: '✓';
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            font-weight: 900;
-            color: #fff;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-        }
-
-        .renk-secenek.acik-renk.secili-renk::after { color: #111; text-shadow: none; }
-
-        /* =====================================================
-           ALT İSTATİSTİK KUTULARI (rekor + saniyede kelime)
-           ===================================================== */
+        /* ===== ALT SAYAÇ (kaç saniyede kaç harf) ===== */
         .alt-istatistikler {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
         }
 
@@ -482,555 +276,249 @@
             font-variant-numeric: tabular-nums;
         }
 
-        .alt-istat-etiket {
-            font-size: 11px;
-            color: var(--yazi-ikincil);
-            margin-top: 3px;
-        }
+        .alt-istat-etiket { font-size: 11px; color: var(--yazi-ikincil); margin-top: 3px; }
 
-        .rekor-kutusu .alt-istat-deger { color: var(--vurgu); }
+        .harf-kutusu .alt-istat-deger { color: var(--yesil); }
+        .sure-kutusu .alt-istat-deger { color: var(--vurgu); }
         .hiz-kutusu .alt-istat-deger { color: var(--vurgu-2); }
 
-        /* =====================================================
-           SONUÇ EKRANI (modal)
-           ===================================================== */
-        .modal {
+        /* ===== BİLDİRİM (seviye atlama) ===== */
+        .bildirim {
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            z-index: 50;
-        }
-
-        .modal.acik { display: flex; }
-
-        .modal-kart {
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-80px);
             background: var(--panel);
-            border: 1px solid var(--kenarlik);
-            border-radius: 18px;
-            padding: 24px 20px;
-            width: 100%;
-            max-width: 440px;
-            text-align: center;
-            box-shadow: 0 20px 60px var(--golge);
-            animation: yukaridan 0.25s ease-out;
-        }
-
-        @keyframes yukaridan {
-            from { transform: translateY(24px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .sonuc-baslik { font-size: 20px; font-weight: 800; }
-
-        /* Seviye rozeti: sonucun ana kahramanı */
-        .seviye-rozeti {
-            margin-top: 14px;
-            background: var(--panel-acik);
-            border: 2px solid var(--kenarlik);
-            border-radius: 16px;
-            padding: 14px 10px;
-            animation: yukaridan 0.3s ease-out;
-        }
-
-        .rozet-emoji { font-size: 44px; line-height: 1; }
-
-        .rozet-no {
-            display: inline-block;
-            margin-top: 8px;
-            font-size: 10px;
+            border: 2px solid var(--vurgu-2);
+            border-radius: 14px;
+            padding: 12px 22px;
+            font-size: 15px;
             font-weight: 800;
-            letter-spacing: 1.5px;
-            color: var(--vurgu-2);
-            background: rgba(76, 201, 240, 0.12);
-            padding: 3px 10px;
-            border-radius: 20px;
+            box-shadow: 0 12px 32px var(--golge);
+            z-index: 60;
+            transition: transform 0.3s ease-out;
+            white-space: nowrap;
         }
 
-        .rozet-adi {
-            font-size: clamp(20px, 6vw, 26px);
-            font-weight: 800;
-            margin-top: 6px;
-        }
+        .bildirim.gorunur { transform: translateX(-50%) translateY(0); }
 
-        .rozet-aciklama { font-size: 12px; color: var(--yazi-ikincil); margin-top: 4px; }
-
-        /* Bir üst seviyeye ne kadar kaldı çubuğu */
-        .sonraki-seviye {
-            margin-top: 10px;
-            font-size: 11px;
-            color: var(--yazi-ikincil);
-        }
-
-        .sonraki-seviye b { color: var(--vurgu); }
-
-        .sonuc-buyuk {
-            font-size: clamp(34px, 10vw, 48px);
-            font-weight: 800;
-            color: var(--vurgu);
-            margin-top: 14px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .sonuc-buyuk-etiket { font-size: 13px; color: var(--yazi-ikincil); }
-
-        .rekor-etiketi {
-            display: none;
-            margin-top: 8px;
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--vurgu);
-            letter-spacing: 1px;
-        }
-
-        .rekor-etiketi.gorunur { display: block; animation: nabiz 1.2s infinite; }
-
-        .sonuc-izgara {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .sonuc-kutu {
-            background: var(--panel-acik);
-            border-radius: 12px;
-            padding: 10px 8px;
-        }
-
-        .sonuc-kutu-deger { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
-        .sonuc-kutu-etiket { font-size: 10px; color: var(--yazi-ikincil); margin-top: 2px; }
-
-        .sonuc-butonlar { display: flex; gap: 8px; margin-top: 18px; }
-
-        .btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: filter 0.15s, background 0.15s;
-        }
-
-        .btn-birincil { background: var(--vurgu-2); color: #0f1115; }
-        .btn-birincil:hover { filter: brightness(1.1); }
-
-        .btn-ikincil { background: var(--panel-acik); color: var(--yazi); border: 1px solid var(--kenarlik); }
-        .btn-ikincil:hover { background: #2c313c; }
-
-        /* =====================================================
-           TELEFON UYARLAMALARI
-           ===================================================== */
         @media (max-width: 560px) {
-            .istatistikler { grid-template-columns: repeat(2, 1fr); }
-
-            .kelime-akis { font-size: 19px; line-height: 28px; gap: 10px 12px; }
-            .kelime-alani { height: 114px; }  /* 3 satır x 38px */
-
-            .durak-emoji { font-size: 16px; }
-            .durak-bilgi { font-size: 9px; }
-            .rozet-emoji { font-size: 36px; }
+            .kelime-akis { font-size: 22px; line-height: 30px; gap: 10px 22px; letter-spacing: 4px; }
+            .kelime-alani { height: 120px; }
+            .alt-istatistikler { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
 </head>
 <body>
     <div class="sarma">
 
-        <!-- ============ BAŞLIK ============ -->
         <header class="baslik">
-            <h1>⌨️ 10 Parmak Klavye</h1>
-            <p>60 saniyede yazma hızını test et — seviye seviye geliş, Klavye Babası ol! 👑</p>
+            <h1>⌨️ 10 Parmak Alıştırma</h1>
+            <p>Grupları yaz, boşlukla geç — seviyeler otomatik yükselir</p>
         </header>
 
-        <!-- ============ TEMA SEÇİCİ ============ -->
-        <div class="tema-kapsayici">
-            <button class="tema-btn" id="temaBtn">
-                <span class="renk-yuvarlak" id="temaYuvarlak"></span>
-                🎨 Klavye Teması
-            </button>
-            <div class="tema-panel" id="temaPanel">
-                <!-- Renkler JavaScript ile doldurulur -->
+        <!-- ============ SEVİYE ŞERİDİ ============ -->
+        <div class="seviye-seridi">
+            <div class="seviye-ust">
+                <div class="seviye-adi" id="seviyeAdi">Seviye <b>1</b> — Isınma</div>
+                <div class="seviye-adim" id="seviyeAdim">Tur: 0/8</div>
             </div>
-        </div>
-
-        <!-- ============ İLERLEME YOLU (otomatik seviye) ============ -->
-        <div class="ilerleme-yolu" id="ilerlemeYolu">
-            <!-- Duraklar JavaScript ile doldurulur -->
-        </div>
-
-        <!-- ============ CANLI İSTATİSTİKLER ============ -->
-        <div class="istatistikler">
-            <div class="istat sure-kutusu" id="sureKutusu">
-                <div class="istat-deger" id="sureDeger">60</div>
-                <div class="istat-etiket">Kalan Süre (sn)</div>
-            </div>
-            <div class="istat dogru-kutusu">
-                <div class="istat-deger" id="dogruDeger">0</div>
-                <div class="istat-etiket">Doğru Kelime</div>
-            </div>
-            <div class="istat yanlis-kutusu">
-                <div class="istat-deger" id="yanlisDeger">0</div>
-                <div class="istat-etiket">Yanlış Kelime</div>
-            </div>
-            <div class="istat hedef-kutusu">
-                <div class="istat-deger" id="seviyeSimdi">1</div>
-                <div class="istat-etiket">Mevcut Seviye</div>
-            </div>
+            <div class="seviye-noktalar" id="seviyeNoktalar"></div>
+            <div class="seviye-not" id="seviyeNot">8 grubu doğru yaz → seviye atla</div>
         </div>
 
         <!-- ============ TEST ALANI ============ -->
         <div class="test-alani" id="testAlani">
-            <div class="sure-cubugu">
-                <div class="sure-cubugu-dolgu" id="sureDolgu"></div>
-            </div>
-
-            <div class="kelime-alani" id="kelimeAlani">
+            <div class="kelime-alani">
                 <div class="kelime-akis" id="kelimeAkisi"></div>
             </div>
 
             <div class="basla-ipucu" id="baslaIpucu">
-                <div>⌨️ Doğrudan yazmaya başla — tıklamaya gerek yok!</div>
-                <div class="kucuk">Süre ilk tuşta başlar • Boşluk = kelimeyi onayla</div>
+                <div>👉 Direkt yazmaya başla — tıklama yok!</div>
+                <div class="kucuk">Grubu yaz → <b>boşluk</b> ile geç</div>
             </div>
 
             <div class="alt-bilgi">
-                <div class="ipucu">💡 <b>Boşluk</b> = sonraki kelime &nbsp;•&nbsp; <b>Backspace</b> = düzelt</div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="yeniden-btn" id="sesBtn" title="Yanlış harf sesini aç/kapat">🔊 Ses Açık</button>
-                    <button class="yeniden-btn" id="yenidenBtn">↻ Yeniden Başla</button>
+                <div class="ipucu">💡 <b>Boşluk</b> = sonraki grup &nbsp;•&nbsp; <b>ESC</b> = sıfırla</div>
+                <div class="butonlar">
+                    <button class="yeniden-btn" id="sesBtn">🔊 Ses Açık</button>
+                    <button class="yeniden-btn" id="yenidenBtn">↻ Sıfırla</button>
                 </div>
             </div>
 
-            <!-- Tuşları yakalayan görünmez input (mobil klavye desteği) -->
             <input type="text" id="girisi" autocomplete="off" autocorrect="off"
                    autocapitalize="off" spellcheck="false">
         </div>
 
-        <!-- ============ PARMAK YERLEŞİMİ HATIRLATMASI ============ -->
-        <div class="parmak-ipucu">
-            🖐️ Parmak yerleşimi: Sol el <b>A S D F</b> &nbsp;•&nbsp; Sağ el <b>J K L Ş</b> &nbsp;•&nbsp; Başparmaklar: <b>Boşluk</b>
-        </div>
-
-        <!-- ============ ALT İSTATİSTİK KUTULARI ============ -->
+        <!-- ============ ALT SAYAÇ ============ -->
         <div class="alt-istatistikler">
-            <div class="alt-istat rekor-kutusu">
-                <div class="alt-istat-deger" id="genelRekor">0</div>
-                <div class="alt-istat-etiket">🏆 Tüm Denemelerde En Çok Yaptığın Kelime</div>
+            <div class="alt-istat harf-kutusu">
+                <div class="alt-istat-deger" id="harfSayisi">0</div>
+                <div class="alt-istat-etiket">✍️ Yazdığın Harf</div>
+            </div>
+            <div class="alt-istat sure-kutusu">
+                <div class="alt-istat-deger" id="gecenSure">0.0</div>
+                <div class="alt-istat-etiket">⏱️ Saniye</div>
             </div>
             <div class="alt-istat hiz-kutusu">
-                <div class="alt-istat-deger" id="saniyeHiz">0.0</div>
-                <div class="alt-istat-etiket">⚡ Saniyede Kaç Kelime Yazdın</div>
+                <div class="alt-istat-deger" id="harfHiz">0.0</div>
+                <div class="alt-istat-etiket">⚡ Harf / Saniye</div>
             </div>
         </div>
     </div>
 
-    <!-- ============ SONUÇ EKRANI (MODAL) ============ -->
-    <div class="modal" id="sonucModal">
-        <div class="modal-kart">
-            <div class="sonuc-baslik">⏱️ Süre Doldu!</div>
-
-            <div class="seviye-rozeti">
-                <div class="rozet-emoji" id="rozetEmoji">🐣</div>
-                <div class="rozet-no" id="rozetNo">SEVİYE 1</div>
-                <div class="rozet-adi" id="rozetAdi">Yeni Başlayan</div>
-                <div class="rozet-aciklama" id="rozetAciklama">Kısa ve kolay kelimeler</div>
-                <div class="sonraki-seviye" id="sonrakiSeviye"></div>
-            </div>
-
-            <div class="sonuc-buyuk" id="sonucKelime">0</div>
-            <div class="sonuc-buyuk-etiket">doğru kelime / 60 saniye</div>
-            <div class="rekor-etiketi" id="rekorEtiketi">🏆 YENİ REKOR!</div>
-
-            <div class="sonuc-izgara">
-                <div class="sonuc-kutu">
-                    <div class="sonuc-kutu-deger" id="sonucYanlis" style="color: var(--kirmizi);">0</div>
-                    <div class="sonuc-kutu-etiket">Yanlış Kelime</div>
-                </div>
-                <div class="sonuc-kutu">
-                    <div class="sonuc-kutu-deger" id="sonucDogruluk" style="color: var(--yesil);">%100</div>
-                    <div class="sonuc-kutu-etiket">Doğruluk</div>
-                </div>
-            </div>
-
-            <div class="sonuc-butonlar">
-                <button class="btn btn-birincil" id="tekrarBtn">▶ Tekrar Dene</button>
-                <button class="btn btn-ikincil" id="seviyeBtn">Yeni Test 🔄</button>
-            </div>
-        </div>
-    </div>
+    <!-- Seviye atlama bildirimi -->
+    <div class="bildirim" id="bildirim">🎉 Seviye 2!</div>
 
     <script>
         /* =====================================================
-           1) SEVİYE TANIMLARI VE KELİME HAZNELERİ
+           1) KLAVYE HARİTASI (Türkçe Q)
            -----------------------------------------------------
-           Her seviyenin: adı, açıklaması, hedef kelime sayısı
-           ve kendine özel kelime listesi vardır.
-           Hedefler: 10 / 18 / 30 / 45 / 60+ kelime (60 saniyede)
+           Her harfin: kolon, satır (0 üst / 1 ev / 2 alt),
+           eli (L/R) ve parmağı (0 serçe ... 3 işaret) tutulur.
+           İki harf arasındaki güçlük bunlardan hesaplanır.
            ===================================================== */
-        const SEVIYELER = [
-            {
-                no: 1,
-                emoji: '🐣',
-                ad: 'Yeni Başlayan',
-                aciklama: 'Kısa ve kolay kelimeler (2-4 harf)',
-                hedef: 10,
-                esik: 0,    // Bu seviyeye girmek için gereken kelime sayısı
-                kelimeler: [
-                    'at', 'ev', 'ek', 'ip', 'ot', 'on', 'un', 'su', 'el', 'ay',
-                    'in', 'ok', 'az', 'bu', 'ne', 'ana', 'ara', 'aşçı', 'ayna', 'baca',
-                    'bal', 'baş', 'bez', 'bil', 'bin', 'bir', 'bit', 'buz', 'çam', 'çek',
-                    'dam', 'diş', 'dut', 'dal', 'kol', 'gol', 'taş', 'kaş', 'göz', 'diz',
-                    'kar', 'kız', 'kul', 'kut', 'muz', 'nar', 'top', 'tor', 'erk', 'tuz',
-                    'tır', 'süt', 'yağ', 'yol', 'yüz', 'kedi', 'kim', 'kedi', 'kule', 'kutu',
-                    'lale', 'masa', 'mavi', 'oda', 'kapı', 'sopa', 'sade', 'taze', 'tepe', 'ucuz',
-                    'umut', 'ufuk', 'uyku', 'uçak', 'uzay', 'yaka', 'ödül', 'oyun', 'para', 'renk',
-                    'rüya', 'sarı', 'gemi', 'geri', 'gibi', 'kalp', 'kart', 'kaya', 'kırk', 'koyu',
-                    'arpa', 'elma', 'erik', 'film'
-                ]
-            },
-            {
-                no: 2,
-                emoji: '🐢',
-                ad: 'Yavaş',
-                aciklama: 'Kelimeler biraz uzuyor (4-6 harf)',
-                hedef: 18,
-                esik: 10,
-                kelimeler: [
-                    'adam', 'akıl', 'anne', 'baba', 'araba', 'ayna', 'bacak', 'bahçe', 'balık', 'banyo',
-                    'basit', 'baykuş', 'bebek', 'belki', 'biber', 'bulut', 'bülbül', 'cevap', 'ceket', 'cuma',
-                    'cümle', 'çanta', 'çiçek', 'çorap', 'çorba', 'dalga', 'deniz', 'ders', 'diken', 'doğa',
-                    'doktor', 'duman', 'ekmek', 'ekran', 'elmas', 'erik', 'etek', 'fener', 'gazete', 'göbek',
-                    'gölge', 'güzel', 'hikaye', 'kağıt', 'kartal', 'keman', 'kışlık', 'kitap', 'komşu', 'korku',
-                    'köpek', 'bilek', 'burun', 'diyet', 'direk', 'dolap', 'limon', 'martı', 'masal', 'melek',
-                    'midye', 'müzik', 'orkide', 'perde', 'petek', 'pilav', 'portre', 'radyo', 'resim', 'saksı',
-                    'salata', 'sanat', 'sıcak', 'soğuk', 'simit', 'soba', 'şeker', 'şelale', 'tavşan', 'tebeşir',
-                    'tırtıl', 'turunç', 'üzüm', 'vadi', 'yastık', 'yavru', 'yıldız', 'yorgan', 'zeytin', 'terlik'
-                ]
-            },
-            {
-                no: 3,
-                emoji: '🚶',
-                ad: 'Normal',
-                aciklama: 'Tamamen normal rastgele kelimeler (5-8 harf)',
-                hedef: 30,
-                esik: 18,
-                kelimeler: [
-                    'akşam', 'arkadaş', 'bahar', 'baraj', 'bayram', 'bilgelik', 'biraz', 'bitki', 'bolluk', 'cadde',
-                    'cesaret', 'çadır', 'çamaşır', 'çilek', 'deneyim', 'değirmen', 'dernek', 'devrim', 'dinlenme', 'doğruluk',
-                    'dolunay', 'durgun', 'düşünce', 'eldiven', 'enerji', 'fabrika', 'fırtına', 'gündüz', 'güneşli', 'güvercin',
-                    'hafıza', 'hamsi', 'hayat', 'hesap', 'hoşgörü', 'ihtiyaç', 'inanç', 'inatçı', 'iskele', 'kahvaltı',
-                    'kandil', 'karınca', 'kasap', 'kaşık', 'kavun', 'kaygı', 'kazak', 'keten', 'konser', 'köprü',
-                    'kurbağa', 'kuzey', 'lahana', 'lamba', 'leylek', 'limonata', 'mercan', 'mikrop', 'mürekkep', 'öğrenci',
-                    'öğretmen', 'papatya', 'peynir', 'pirinç', 'pusula', 'rüzgar', 'sabah', 'salıncak', 'sanatçı', 'semaver',
-                    'serçeler', 'sevda', 'sınav', 'sırtlan', 'soğan', 'sözlük', 'süpürge', 'şemsiye', 'şerefli', 'tahta',
-                    'tarak', 'tebeşir', 'toplantı', 'turuncu', 'umutlu', 'uykusuz', 'üzüntü', 'vasiyet', 'vizyon', 'yabani',
-                    'yalnız', 'yankı', 'yaprak', 'yarışma', 'yelpaze', 'yeşillik', 'yıldırım', 'zaman', 'zorluk', 'çimen'
-                ]
-            },
-            {
-                no: 4,
-                emoji: '🏃',
-                ad: 'Hızlı',
-                aciklama: 'Uzun kelimeler (8-12 harf)',
-                hedef: 45,
-                esik: 30,
-                kelimeler: [
-                    'anlayışlı', 'arkeoloji', 'ayakkabı', 'aydınlatma', 'bahçıvanlık', 'baygınlık', 'başkanlık', 'beslenme', 'bilgisayar', 'birincilik',
-                    'bisikletçi', 'deneyimli', 'doğrulukla', 'dolambaç', 'duygusallık', 'düşünmeye', 'eldivenler', 'erdemlilik', 'gelişigüzel', 'gergedan',
-                    'gözlemcilik', 'güzelleşme', 'kaybolmuş', 'kelebekler', 'korkusuzca', 'kırılganlık', 'kütüphaneci', 'martılarla', 'muhasebeci', 'özgüvenli',
-                    'sebzecilik', 'semaverler', 'süpürgelik', 'şaşırtmaca', 'sıkıntısız', 'tebrikler', 'teleskopla', 'tepetaklak', 'uzaklaşmak', 'yiyeceğim',
-                    'yönetmelik', 'zamanlama', 'zeytinyağı', 'zıplayarak', 'güvenilmez', 'girişimcilik', 'şimşekler', 'yolculukla', 'üniversite', 'televizyon',
-                    'otobüsler', 'pasaportum', 'radyolarda', 'tecrübeli', 'tekdüzelik', 'uğraşıları', 'üzüntüyle', 'vitrinler', 'yaramazlık', 'yarışmacılar',
-                    'yorgunluktan', 'yükseltmek', 'zambaklar', 'zeytinlikler', 'ağırlaşmak', 'alışveriş', 'barınaklar', 'çamaşırlar', 'deneyimsiz', 'denizaltı',
-                    'denizcilik', 'derinleşme', 'eğlenceli', 'mükemmellik', 'salıncaklar', 'sandalyeler', 'sürücülerin', 'tabelaların', 'yağmurluklar', 'yüzücülerin'
-                ]
-            },
-            {
-                no: 5,
-                emoji: '👑',
-                ad: 'Klavye Babası',
-                aciklama: 'Uzun + zor kelimeler (ğ, ş, İ, apostroflu şehirler…)',
-                hedef: 60,
-                esik: 45,
-                kelimeler: [
-                    'ağırlaştırma', 'alışılmış', 'algılayıcı', 'açıklanamaz', 'bağımsızlık', 'bilinçdışı', 'çeşitlilik', 'çekincesiz', 'doğruluklar', 'girişimsel',
-                    'kaçınılmaz', 'meşguliyet', 'özensizlik', 'özgürleşme', 'şaşırtıcılık', 'sıkışıklık', 'sızıntılar', 'üzgünlüğüne', 'yoğunlaşmak', 'yığılmalardan',
-                    'kısırlaştırma', 'şımarıklık', 'tükenmişlik', 'yalnızlaşma', 'ağırlaştırıcı', 'gıdıklanma', 'görgüsüzce', 'kurumsallaşma', 'hükümsüzlük', 'kuşkuculuk',
-                    'kuşkusuzluk', 'mütevazılık', 'şaşkınlıklar', 'sesizleşmiş', 'sıkışmışlık', 'uzlaşmacılık', 'uyuşmazlık', 'üşengeçlik', 'yaklaşımlarla', 'yanlışlıklar',
-                    'yetersizlikler', 'yıpranmışlık', 'yoğunlaştırma', 'zenginleşmek', 'sürdürülebilir', 'muhafazakarlık', 'özentiilikler', 'başvurusuzluk', 'düzleşmecilik', 'güdükleşmeler',
-                    'Türkiye\'de', 'İstanbul\'a', 'Ankara\'dan', 'İzmir\'de', 'Adana\'ya', 'Bursa\'nın', 'Konya\'da', 'Rize\'den', 'Samsun\'un', 'Muğla\'da',
-                    'Ağrı\'dan', 'Şanlıurfa\'da', 'Diyarbakır\'dan', 'Zonguldak\'ta', 'Bolu\'dan', 'Sivas\'ın', 'Kayseri\'ye', 'Eskişehir\'de', 'Antalya\'ya', 'Mersin\'in',
-                    'Kastamonu\'dan', 'Aydın\'a', 'Çanakkale\'de', 'Trabzon\'un', 'Kocaeli\'nde', 'Kütahya\'ya', 'Balıkesir\'de', 'Giresun\'un', 'Sinop\'tan', 'Tokat\'ın'
-                ]
-            }
-        ];
-
-        /* =====================================================
-           1b) TEMA RENKLERİ (klavye arka teması seçimi)
-           -----------------------------------------------------
-           Seçilen renk kelimelerin göründüğü alanın (.test-alani)
-           arka planına uygulanır ve localStorage'a kaydedilir.
-           ===================================================== */
-        const TEMALAR = [
-            { id: 'kirmizi',  ad: 'Kırmızı', renk: '#e5484d', yazi: '#f2f4f7', yaziIkincil: 'rgba(242, 244, 247, 0.55)' },
-            { id: 'beyaz',    ad: 'Beyaz',   renk: '#f5f6f8', yazi: '#1a1d24', yaziIkincil: 'rgba(26, 29, 36, 0.5)' },
-            { id: 'mavi',     ad: 'Mavi',    renk: '#3b82f6', yazi: '#f2f4f7', yaziIkincil: 'rgba(242, 244, 247, 0.6)' },
-            { id: 'siyah',    ad: 'Siyah',   renk: '#000000', yazi: '#f2f4f7', yaziIkincil: 'rgba(242, 244, 247, 0.55)' },
-            { id: 'yesil',    ad: 'Yeşil',   renk: '#22c55e', yazi: '#0f1115', yaziIkincil: 'rgba(15, 17, 21, 0.5)' },
-            { id: 'gri',      ad: 'Gri',     renk: '#6b7280', yazi: '#f2f4f7', yaziIkincil: 'rgba(242, 244, 247, 0.6)' },
-        ];
-
-        let seciliTema = TEMALAR[3];           // Varsayılan: Siyah (mevcut koyu görünüm)
-        const TEMA_ANAHTARI = 'klavye_temasi';
-
-        /* Temayı kelime alanına uygular: arka plan + yazı renkleri */
-        function temaUygula(tema) {
-            seciliTema = tema;
-            const alan = document.getElementById('testAlani');
-            alan.style.background = tema.renk;
-            alan.style.color = tema.yazi;
-
-            /* Alan içindeki tüm yazı renklerini temaya göre güncelle:
-               - yazılmamış harfler: soluk ikincil renk
-               - imleç çizgisi: tema yazı rengi */
-            alan.style.setProperty('--tema-yazi', tema.yazi);
-            alan.style.setProperty('--tema-ikincil', tema.yaziIkincil);
-
-            /* Açık zeminlerde (beyaz, yeşil) yeşil/kırmızı tonları
-               koyulaştır ki okunabilsin */
-            alan.classList.toggle('acik-zemin', tema.id === 'beyaz' || tema.id === 'yesil');
-
-            document.getElementById('temaYuvarlak').style.background = tema.renk;
-            localStorage.setItem(TEMA_ANAHTARI, tema.id);
-            temaPaneliCiz();
-        }
-
-        /* Açılır renk panelini çizer (seçili olana tik koyar) */
-        function temaPaneliCiz() {
-            const panel = document.getElementById('temaPanel');
-            panel.innerHTML = '';
-
-            TEMALAR.forEach(function (t) {
-                const kutu = document.createElement('button');
-                kutu.type = 'button';
-                kutu.className = 'renk-secenek' +
-                    (t.renk === '#f5f6f8' ? ' acik-renk' : '') +
-                    (t.id === seciliTema.id ? ' secili-renk' : '');
-                kutu.style.background = t.renk;
-                kutu.title = t.ad;
-                kutu.setAttribute('aria-label', t.ad);
-
-                kutu.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    temaUygula(t);
-                    panel.classList.remove('acik');
-                });
-
-                panel.appendChild(kutu);
-            });
-        }
-
-        /* =====================================================
-           2) OYUN DURUMU (tüm değerler burada tutulur)
-           ===================================================== */
-        const SURE = 60;                       // Test süresi: 60 saniye
-        const KAYIT_ANAHTARI = 'klavye_rekorlari';
-        const REKOR_GENEL_KEY = 'klavye_genel_rekor';   // Tüm zamanların en iyisi
-
-        let rekorlar = {};                     // { seviyeNo: enIyiKelimeSayisi }
-        let genelRekor = 0;                    // Tüm denemelerde en çok yazılan kelime sayısı
-
-        /* Doğru kelime sayısına göre o anki seviyeyi bulur.
-           <10 -> 1, 10-17 -> 2, 18-29 -> 3, 30-44 -> 4, 45+ -> 5 */
-        function seviyeBul(dogruKelime) {
-            let s = SEVIYELER[0];
-            for (const sv of SEVIYELER) {
-                if (dogruKelime >= sv.esik) s = sv;
-            }
-            return s;
-        }
-
-        let akis = [];                         // Ekranda akan kelime dizisi (metin)
-        let kelimeEls = [];                    // Kelimelerin HTML elemanları
-        let durum = {
-            calisiyor: false,                  // Sayaç çalışıyor mu?
-            bitti: false,                      // Test bitti mi?
-            index: 0,                          // Şu anki kelime sırası
-            yazilan: '',                       // Şu anki kelimeye yazılan metin
-            dogru: 0,                          // Doğru yazılan kelime sayısı
-            yanlis: 0,                         // Yanlış yazılan kelime sayısı
-            tus: 0,                            // Toplam tuş vuruşu (harf)
-            dogruTus: 0,                       // Doğru basılan tuş sayısı
-            baslangic: null,                   // İlk tuşun zamanı (ms)
-            zamanId: null                      // setInterval kimliği
+        const TUSLAR = {
+            q: [0, 0, 'L', 0], w: [1, 0, 'L', 1], e: [2, 0, 'L', 2], r: [3, 0, 'L', 3], t: [4, 0, 'L', 3],
+            y: [5, 0, 'R', 3], u: [6, 0, 'R', 3], ı: [7, 0, 'R', 2], o: [8, 0, 'R', 1], p: [9, 0, 'R', 0], ğ: [10, 0, 'R', 0], ü: [11, 0, 'R', 0],
+            a: [0, 1, 'L', 0], s: [1, 1, 'L', 1], d: [2, 1, 'L', 2], f: [3, 1, 'L', 3], g: [4, 1, 'L', 3],
+            h: [5, 1, 'R', 3], j: [6, 1, 'R', 3], k: [7, 1, 'R', 2], l: [8, 1, 'R', 1], ş: [9, 1, 'R', 0], i: [10, 1, 'R', 0],
+            z: [1, 2, 'L', 0], x: [2, 2, 'L', 1], c: [3, 2, 'L', 2], v: [4, 2, 'L', 3], b: [5, 2, 'L', 3],
+            n: [6, 2, 'R', 3], m: [7, 2, 'R', 3], ö: [8, 2, 'R', 2], ç: [9, 2, 'R', 1]
         };
 
-        /* Sık kullanılan HTML elemanlarını önceden bul */
-        const kelimeAkisiEl = document.getElementById('kelimeAkisi');
-        const kelimeAlaniEl = document.getElementById('kelimeAlani');
-        const girisiEl = document.getElementById('girisi');
-        const baslaIpucuEl = document.getElementById('baslaIpucu');
-        const sureDegerEl = document.getElementById('sureDeger');
-        const sureDolguEl = document.getElementById('sureDolgu');
-        const sureKutusuEl = document.getElementById('sureKutusu');
-        const dogruDegerEl = document.getElementById('dogruDeger');
-        const yanlisDegerEl = document.getElementById('yanlisDeger');
-        const seviyeSimdiEl = document.getElementById('seviyeSimdi');
-        const sonucModalEl = document.getElementById('sonucModal');
+        /* İki harf arasındaki yazma güçlüğü puanı.
+           - Aynı el + aynı parmak = en zor (parmak uzun atlar)
+           - Aynı el komşu parmaklar = orta
+           - Elle değiştirme = en kolay */
+        function ciftPuan(h1, h2) {
+            const a = TUSLAR[h1], b = TUSLAR[h2];
+            const mesafe = Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
+            if (a[2] !== b[2]) return 0.2 + mesafe * 0.4;             // eller farklı
+            if (a[3] === b[3]) return 2 + mesafe * 1.2;               // aynı parmak
+            return 0.5 + mesafe * 0.8;                                // aynı el, farklı parmak
+        }
+
+        /* Bir grubun ortalama güçlüğü */
+        function grupPuan(grup) {
+            let t = 0;
+            for (let i = 1; i < grup.length; i++) t += ciftPuan(grup[i - 1], grup[i]);
+            return t / (grup.length - 1);
+        }
 
         /* =====================================================
-           3) KELİME AKIŞI ÜRETME
+           2) 12 SEVİYE
            -----------------------------------------------------
-           Listeden rastgele kelime çeker; aynı kelime üst üste
-           iki kez gelmez. Kelimeler tükendikçe yenileri eklenir.
+           min/max: grubun güçlük aralığı. Seviye arttıkça
+           aralık yukarı kayar -> harfler daha uzak ve karışık.
+           tuslar: o seviyede açılan tuş havuzu.
            ===================================================== */
-        let sonKelime = null;
+        const SEVIYELER = [
+            { ad: 'Isınma',        min: 0.0, max: 1.5, tuslar: 'asdfjklşgh' },
+            { ad: 'Temel',         min: 0.0, max: 2.0, tuslar: 'asdfjklşghrtuvbnmy' },
+            { ad: 'Alışma',        min: 0.0, max: 2.4, tuslar: 'asdfjklşghrtuvbnmyeımcö' },
+            { ad: 'Orta',          min: 0.0, max: 2.8, tuslar: 'asdfjklşghrtuvbnmyeımcöwoxçl' },
+            { ad: 'Genişleme',     min: 0.0, max: 3.2, tuslar: 'asdfjklşghrtuvbnmyeımcöwoxçpziş' },
+            { ad: 'Zorlanma',      min: 0.0, max: 3.6, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
+            { ad: 'Hız',           min: 0.8, max: 4.0, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
+            { ad: 'Zor',           min: 1.4, max: 4.2, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
+            { ad: 'Çok Zor',       min: 2.0, max: 4.4, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
+            { ad: 'Ustalık',       min: 2.6, max: 4.6, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
+            { ad: 'Efsane',        min: 3.2, max: 4.8, tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' },
+            { ad: 'Klavye Babası', min: 3.8, max: 99,  tuslar: 'qwertyuıopğüasdfghjklşizxcvbnmöç' }
+        ];
 
-        /* Kelime, listedeki SIRASINA göre havuz seçer.
-           Örn: 12. doğru kelimeden sonra gelen kelimeler 2. seviye
-           havuzundan çekilir (10 <= 12 < 18). */
-        function kelimeHavuzu(sira) {
-            return seviyeBul(sira).kelimeler;
-        }
+        const TUR_UZUNLUGU = 8;                 // 8 grup = 1 tur, sonra seviye kontrolü
+        const SEV_BAS = 0.7;                    // tur doğruluğu en az %70 olmalı
 
-        function rastgeleKelime(sira) {
-            const liste = kelimeHavuzu(sira);
-            let k;
-            do {
-                k = liste[Math.floor(Math.random() * liste.length)];
-            } while (k === sonKelime && liste.length > 1);
-            sonKelime = k;
-            return k;
-        }
+        /* Seviyeye uygun 3-4 harflik grup üretir.
+           Havuzdan rastgele harfler seçer, grubun güçlük
+           puanı seviye aralığındaysa kabul eder. */
+        function grupUret() {
+            const sv = SEVIYELER[durum.seviye - 1];
+            const havuz = sv.tuslar.split('');
+            const uzunluk = Math.random() < 0.5 ? 3 : 4;
 
-        /* Yeni bir akış oluşturur (test başında) */
-        function akisOlustur(adet) {
-            akis = [];
-            kelimeEls = [];
-            kelimeAkisiEl.innerHTML = '';
-            kelimeAkisiEl.style.transform = 'translateY(0)';
-            for (let i = 0; i < adet; i++) akis.push(rastgeleKelime(i));
-            akis.forEach(k => kelimeAkisiEl.appendChild(kelimeCiz(k)));
-        }
+            let enIyi = null, enIyiFark = 999;
 
-        /* Akışın sonuna yeni kelimeler ekler (uzun testler için) */
-        function akisUzat(baslangicSira, adet) {
-            for (let i = 0; i < adet; i++) {
-                akis.push(rastgeleKelime(baslangicSira + i));
-                kelimeAkisiEl.appendChild(kelimeCiz(akis[akis.length - 1]));
+            for (let deneme = 0; deneme < 60; deneme++) {
+                const g = [];
+                for (let i = 0; i < uzunluk; i++) {
+                    g.push(havuz[Math.floor(Math.random() * havuz.length)]);
+                }
+                const p = grupPuan(g);
+
+                /* Aralıktaysa hemen kabul */
+                if (p >= sv.min && p <= sv.max) return g.join('');
+
+                /* Değilse en yakın adayı sakla (kilitlenme olmasın) */
+                const hedef = p < sv.min ? sv.min : sv.max;
+                const fark = Math.abs(p - hedef);
+                if (fark < enIyiFark) { enIyiFark = fark; enIyi = g; }
             }
+            return enIyi.join('');
         }
 
-        /* Bir kelimenin HTML'ini üretir: her harf ayrı span + son imleç */
-        function kelimeCiz(kelime) {
+        /* =====================================================
+           3) DURUM
+           ===================================================== */
+        let durum = {
+            seviye: 1,
+            akis: [], kelimeEls: [],
+            index: 0, yazilan: '',
+            calisiyor: false, bitti: false,
+            baslangic: null, zamanId: null,
+            harf: 0, hatali: 0,             // toplam doğru harf / hatalı tuş
+            turGrup: 0,                     // tur içinde tamamlanan grup
+            turDogru: 0, turToplam: 0       // tur istatistikleri
+        };
+
+        const kelimeAkisiEl = document.getElementById('kelimeAkisi');
+        const girisiEl = document.getElementById('girisi');
+        const baslaIpucuEl = document.getElementById('baslaIpucu');
+
+        /* =====================================================
+           4) SES (yanlış harfte kısa "dırt")
+           ===================================================== */
+        let sesBaglami = null;
+        let sesAcik = localStorage.getItem('klavye_ses') !== '0';
+
+        function yanlisSesiCal() {
+            if (!sesAcik) return;
+            try {
+                if (!sesBaglami) sesBaglami = new (window.AudioContext || window.webkitAudioContext)();
+                if (sesBaglami.state === 'suspended') sesBaglami.resume();
+
+                const t = sesBaglami.currentTime;
+                const osc = sesBaglami.createOscillator();
+                const gain = sesBaglami.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, t);
+                osc.frequency.exponentialRampToValueAtTime(70, t + 0.12);
+                gain.gain.setValueAtTime(0.35, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+                osc.connect(gain).connect(sesBaglami.destination);
+                osc.start(t); osc.stop(t + 0.15);
+
+                const osc2 = sesBaglami.createOscillator();
+                const gain2 = sesBaglami.createGain();
+                osc2.type = 'square';
+                osc2.frequency.setValueAtTime(140, t);
+                osc2.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+                gain2.gain.setValueAtTime(0.2, t);
+                gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+                osc2.connect(gain2).connect(sesBaglami.destination);
+                osc2.start(t); osc2.stop(t + 0.12);
+            } catch (h) { /* sessiz devam */ }
+        }
+
+        /* =====================================================
+           5) AKIŞ YÖNETİMİ
+           ===================================================== */
+        function kelimeCiz(grup) {
             const kutu = document.createElement('div');
             kutu.className = 'kelime';
-            for (const harf of kelime) {
+            for (const harf of grup) {
                 const h = document.createElement('span');
                 h.className = 'harf';
                 h.textContent = harf;
@@ -1039,15 +527,24 @@
             const son = document.createElement('span');
             son.className = 'son-imlec';
             kutu.appendChild(son);
-            kelimeEls.push(kutu);
+            durum.kelimeEls.push(kutu);
             return kutu;
         }
 
-        /* =====================================================
-           4) HARF BOYAMA (yazılanları yeşil/kırmızı göster)
-           ===================================================== */
+        function akisDoldur(adet, temizle) {
+            if (temizle) {
+                durum.akis = []; durum.kelimeEls = [];
+                kelimeAkisiEl.innerHTML = '';
+                kelimeAkisiEl.style.transform = 'translateY(0)';
+            }
+            for (let i = 0; i < adet; i++) {
+                durum.akis.push(grupUret());
+                kelimeAkisiEl.appendChild(kelimeCiz(durum.akis[durum.akis.length - 1]));
+            }
+        }
+
         function harfleriBoya() {
-            const kutu = kelimeEls[durum.index];
+            const kutu = durum.kelimeEls[durum.index];
             if (!kutu) return;
             const harfler = kutu.querySelectorAll('.harf');
             const yaz = durum.yazilan;
@@ -1055,293 +552,148 @@
             harfler.forEach((h, i) => {
                 h.classList.remove('d', 'y', 'bekleyen');
                 if (i < yaz.length) {
-                    h.classList.add(yaz[i] === akis[durum.index][i] ? 'd' : 'y');
+                    h.classList.add(yaz[i] === durum.akis[durum.index][i] ? 'd' : 'y');
                 } else if (i === yaz.length) {
-                    h.classList.add('bekleyen');   // İmleç sıradaki harfte
+                    h.classList.add('bekleyen');
                 }
             });
-
-            /* Kelime tamamen yazıldıysa imleç kelimenin sonuna geçer */
-            kutu.classList.toggle('tamamlandi', yaz.length >= akis[durum.index].length);
+            kutu.classList.toggle('tamamlandi', yaz.length >= durum.akis[durum.index].length);
         }
 
-        /* =====================================================
-           5) KELİME ONAYLAMA (boşluk basılınca çağrılır)
-           ===================================================== */
-        function kelimeGonder(yazilan) {
-            const kelime = akis[durum.index];
-            const kutu = kelimeEls[durum.index];
-            const dogruMu = yazilan === kelime;
-
-            if (dogruMu) durum.dogru++; else durum.yanlis++;
-
-            /* Biten kelimeyi işaretle ve sıradakini aktif yap */
-            kutu.classList.remove('aktif', 'tamamlandi');
-            kutu.classList.add(dogruMu ? 'td' : 'ty');
-
-            durum.index++;
-            durum.yazilan = '';
-
-            const yeni = kelimeEls[durum.index];
-            if (yeni) {
-                yeni.classList.add('aktif');
-                harfleriBoya();
-            }
-
-            kaydir();
-            canliGuncelle();
-
-            /* Kelimeler tükenmek üzereyse uzat (sonsuz akış) */
-            if (durum.index >= akis.length - 15) akisUzat(durum.index, 20);
-        }
-
-        /* =====================================================
-           6) KAYDIRMA (aktif kelime hep ortada kalsın)
-           -----------------------------------------------------
-           Aktif kelime 2. satıra geçtiğinde akış yukarı kayar,
-           böylece kullanıcının gözü hep aynı hizada kalır.
-           ===================================================== */
         function kaydir() {
-            const el = kelimeEls[durum.index];
+            const el = durum.kelimeEls[durum.index];
             if (!el) return;
-            const satir = el.offsetHeight + 12;          /* satır yüksekliği + boşluk */
+            const satir = el.offsetHeight + 14;
             if (el.offsetTop > satir) {
                 kelimeAkisiEl.style.transform = 'translateY(' + (satir - el.offsetTop) + 'px)';
             }
         }
 
         /* =====================================================
-           7) CANLI İSTATİSTİK GÜNCELLEME
-           -----------------------------------------------------
-           Doğru kelime arttıkça mevcut seviye otomatik yükselir;
-           hem üstteki sayı hem ilerleme yolundaki duraklar
-           canlı olarak güncellenir.
+           6) GRUP TAMAMLAMA + TUR/SEVİYE İLERLEMESİ
            ===================================================== */
-        function canliGuncelle() {
-            dogruDegerEl.textContent = durum.dogru;
-            yanlisDegerEl.textContent = durum.yanlis;
+        function grupGonder() {
+            const kelime = durum.akis[durum.index];
+            const kutu = durum.kelimeEls[durum.index];
+            const dogruMu = durum.yazilan === kelime;
 
-            const sv = seviyeBul(durum.dogru);
-            seviyeSimdiEl.textContent = sv.no;
-            ilerlemeYoluCiz(sv);
+            /* Tur istatistiği: yazılan harfler */
+            for (let i = 0; i < durum.yazilan.length; i++) {
+                durum.turToplam++;
+                if (durum.yazilan[i] === kelime[i]) durum.turDogru++;
+            }
 
-            /* Saniyede kelime: geçen süreye böl (sayaç başlamadıysa 0) */
-            const gecen = durum.baslangic ? (Date.now() - durum.baslangic) / 1000 : 0;
-            const hiz = gecen > 0 ? durum.dogru / gecen : 0;
-            document.getElementById('saniyeHiz').textContent = hiz.toFixed(1);
+            kutu.classList.remove('aktif', 'tamamlandi');
+            kutu.classList.add(dogruMu ? 'td' : 'ty');
 
-            /* Genel rekor canlı gösterimi */
-            document.getElementById('genelRekor').textContent =
-                Math.max(genelRekor, durum.dogru);
+            durum.index++;
+            durum.yazilan = '';
+            durum.turGrup++;
+
+            const yeni = durum.kelimeEls[durum.index];
+            if (yeni) { yeni.classList.add('aktif'); harfleriBoya(); }
+
+            kaydir();
+            sayacGuncelle();
+
+            /* Akış tükeniyorsa uzat */
+            if (durum.index >= durum.akis.length - 8) akisDoldur(12, false);
+
+            /* Tur bitti mi? */
+            if (durum.turGrup >= TUR_UZUNLUGU) turDegerlendir();
+        }
+
+        function turDegerlendir() {
+            const oran = durum.turToplam > 0 ? durum.turDogru / durum.turToplam : 0;
+
+            if (oran >= SEV_BAS && durum.seviye < 12) {
+                durum.seviye++;
+                localStorage.setItem('drill_seviye', String(durum.seviye));
+                bildirGoster('🎉 Seviye ' + durum.seviye + ' — ' + SEVIYELER[durum.seviye - 1].ad + '!');
+                akisDoldur(20, true);                       // yeni seviyenin grupları
+                durum.index = 0; durum.yazilan = '';
+                durum.kelimeEls[0].classList.add('aktif');
+                harfleriBoya();
+            } else if (durum.seviye === 12 && oran >= SEV_BAS) {
+                bildirGoster('👑 Zirvedesin! Klavye Babası');
+            } else {
+                bildirGoster('💪 Doğruluk %' + Math.round(oran * 100) + ' — aynı seviyede devam');
+            }
+
+            /* Tur sayaçlarını sıfırla */
+            durum.turGrup = 0;
+            durum.turDogru = 0;
+            durum.turToplam = 0;
+
+            seviyeSeridiCiz();
         }
 
         /* =====================================================
-           8) ZAMANLAYICI (ilk tuşta başlar, 60 saniyede biter)
+           7) SAYAÇ (harf, saniye, harf/saniye)
            ===================================================== */
+        function sayacGuncelle() {
+            document.getElementById('harfSayisi').textContent = durum.harf;
+            const gecen = durum.baslangic ? (Date.now() - durum.baslangic) / 1000 : 0;
+            document.getElementById('gecenSure').textContent = gecen.toFixed(1);
+            document.getElementById('harfHiz').textContent =
+                gecen > 0 ? (durum.harf / gecen).toFixed(1) : '0.0';
+        }
+
         function zamanlayiciBaslat() {
             durum.calisiyor = true;
             durum.baslangic = Date.now();
             baslaIpucuEl.classList.add('gizli');
-
-            durum.zamanId = setInterval(function () {
-                const gecen = (Date.now() - durum.baslangic) / 1000;
-                const kalan = Math.max(0, SURE - gecen);
-
-                sureDegerEl.textContent = Math.ceil(kalan);
-                sureDolguEl.style.width = (gecen / SURE * 100) + '%';
-
-                /* Saniyede kelime hızını her tikte tazele */
-                const hiz = gecen > 0 ? durum.dogru / gecen : 0;
-                document.getElementById('saniyeHiz').textContent = hiz.toFixed(1);
-
-                /* Son 10 saniyede süre kırmızı yanıp söner */
-                sureKutusuEl.classList.toggle('son-10', kalan <= 10 && kalan > 0);
-
-                if (kalan <= 0) testiBitir();
-            }, 100);
+            durum.zamanId = setInterval(sayacGuncelle, 100);
         }
 
         /* =====================================================
-           9) TESTİ BİTİR + SONUÇ EKRANI
+           8) SEVİYE ŞERİDİ + BİLDİRİM
            ===================================================== */
-        function testiBitir() {
-            clearInterval(durum.zamanId);
-            durum.calisiyor = false;
-            durum.bitti = true;
-            girisiEl.blur();
+        function seviyeSeridiCiz() {
+            document.getElementById('seviyeAdi').innerHTML =
+                'Seviye <b>' + durum.seviye + '</b> — ' + SEVIYELER[durum.seviye - 1].ad;
+            document.getElementById('seviyeAdim').textContent =
+                'Tur: ' + durum.turGrup + '/' + TUR_UZUNLUGU;
 
-            /* KAÇ DOĞRU KELİME YAZDIYSA SEVİYESİ O OLUR */
-            const sv = seviyeBul(durum.dogru);
-
-            /* Rekor: ulaşılan en yüksek seviyenin kelime sayısı */
-            const eskiRekor = rekorlar[sv.no] || 0;
-            const yeniRekor = durum.dogru > eskiRekor && durum.dogru > 0;
-            if (yeniRekor) {
-                rekorlar[sv.no] = durum.dogru;
-                localStorage.setItem(KAYIT_ANAHTARI, JSON.stringify(rekorlar));
+            const yol = document.getElementById('seviyeNoktalar');
+            yol.innerHTML = '';
+            for (let i = 1; i <= 12; i++) {
+                const n = document.createElement('div');
+                n.className = 'nokta' +
+                    (i < durum.seviye ? ' gecti' : '') +
+                    (i === durum.seviye ? ' simdiki' : '');
+                n.title = 'Seviye ' + i + ' — ' + SEVIYELER[i - 1].ad;
+                yol.appendChild(n);
             }
+        }
 
-            /* GENEL REKOR: tüm denemelerde en çok yazılan kelime sayısı */
-            if (durum.dogru > genelRekor) {
-                genelRekor = durum.dogru;
-                localStorage.setItem(REKOR_GENEL_KEY, String(genelRekor));
-            }
-            document.getElementById('genelRekor').textContent = genelRekor;
-
-            /* Son hız (tamamlanmış süreye göre) */
-            const gecenSure = durum.baslangic ? (Date.now() - durum.baslangic) / 1000 : SURE;
-            document.getElementById('saniyeHiz').textContent =
-                (gecenSure > 0 ? durum.dogru / gecenSure : 0).toFixed(1);
-
-            /* Seviye rozetini doldur */
-            document.getElementById('rozetEmoji').textContent = sv.emoji;
-            document.getElementById('rozetNo').textContent = 'SEVİYE ' + sv.no + (sv.no === 5 ? ' — EN ÜST SEVİYE' : '');
-            document.getElementById('rozetAdi').textContent = sv.ad;
-            document.getElementById('rozetAciklama').textContent = sv.aciklama;
-
-            /* Bir üst seviyeye kaç kelime kaldı? */
-            const sonraki = SEVIYELER[sv.no];   // no: 1..5, dizi 0 tabanlı
-            const sonrakiEl = document.getElementById('sonrakiSeviye');
-            if (sonraki) {
-                const kalan = sonraki.esik - durum.dogru;
-                sonrakiEl.innerHTML = 'Sonraki seviye (<b>' + sonraki.emoji + ' ' + sonraki.ad +
-                    '</b>) için <b>' + kalan + '</b> kelime daha!';
-            } else {
-                sonrakiEl.innerHTML = '👑 <b>Zirvedesin!</b> Daha yukarısı yok!';
-            }
-
-            document.getElementById('sonucKelime').textContent = durum.dogru;
-            document.getElementById('sonucYanlis').textContent = durum.yanlis;
-            document.getElementById('sonucDogruluk').textContent =
-                durum.tus > 0 ? '%' + Math.round(durum.dogruTus / durum.tus * 100) : '%100';
-            document.getElementById('rekorEtiketi').classList.toggle('gorunur', yeniRekor);
-
-            sonucModalEl.classList.add('acik');
+        let bildirimZaman = null;
+        function bildirGoster(metin) {
+            const el = document.getElementById('bildirim');
+            el.textContent = metin;
+            el.classList.add('gorunur');
+            clearTimeout(bildirimZaman);
+            bildirimZaman = setTimeout(() => el.classList.remove('gorunur'), 2600);
         }
 
         /* =====================================================
-           10) SIFIRLAMA (yeni test için her şeyi başa alır)
+           9) TUŞ YAKALAMA (bilgisayar + telefon, çift yol)
            ===================================================== */
-        function sifirla() {
-            clearInterval(durum.zamanId);
-            durum = {
-                calisiyor: false, bitti: false, index: 0, yazilan: '',
-                dogru: 0, yanlis: 0, tus: 0, dogruTus: 0,
-                baslangic: null, zamanId: null
-            };
-            akisOlustur(40);
-            kelimeEls[0].classList.add('aktif');
-            harfleriBoya();
-
-            sureDegerEl.textContent = SURE;
-            sureDolguEl.style.width = '0%';
-            sureKutusuEl.classList.remove('son-10');
-            canliGuncelle();
-            baslaIpucuEl.classList.remove('gizli');
-            sonucModalEl.classList.remove('acik');
-            girisiEl.value = '';
-        }
-
-        /* =====================================================
-           11) TUŞ YAKALAMA (yazma olayları)
-           -----------------------------------------------------
-           İKİ yol vardır ve birbirini engellemez:
-
-           A) BİLGİSAYAR: document üzerinde keydown dinlenir.
-              Ekrana HİÇ TIKLAMAYA GEREK YOK — sayfa açıkken
-              doğrudan yazmaya başla, süre ilk tuşta başlar.
-
-           B) TELEFON: gizli input'a dokununca klavye açılır;
-              "input" olayı yazmayı işler. (Sanal klavyelerde
-              keydown güvenilir değildir.)
-
-           İki yol, olayın hedefine bakılarak ayrılır: hedef
-           input DEĞİLSE A yolu, inputsa B yolu çalışır.
-           ===================================================== */
-
-        /* =====================================================
-           SES EFEKTLERİ (Web Audio API — dosya gerekmez)
-           -----------------------------------------------------
-           Yanlış harfte kısa sert bir "dırt" uyarı sesi çıkar.
-           Ses bağlamı ilk tuşta oluşturulur (tarayıcı kuralı).
-           ===================================================== */
-        let sesBaglami = null;
-        let sesAcik = true;                    // Ses aç/kapa anahtarı
-
-        /* Kısa "DIRRT!" uyarı sesi: düşük frekanslı testere dalgası
-           + hızlı sönümleme = sert, dikkat çekici cırtlama */
-        function yanlisSesiCal() {
-            if (!sesAcik) return;
-            try {
-                if (!sesBaglami) sesBaglami = new (window.AudioContext || window.webkitAudioContext)();
-                if (sesBaglami.state === 'suspended') sesBaglami.resume();
-
-                const t = sesBaglami.currentTime;
-
-                /* Ana cırtlama tonu (200 -> 80 Hz düşer) */
-                const osc = sesBaglami.createOscillator();
-                const gain = sesBaglami.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(220, t);
-                osc.frequency.exponentialRampToValueAtTime(70, t + 0.12);
-
-                gain.gain.setValueAtTime(0.35, t);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
-
-                osc.connect(gain).connect(sesBaglami.destination);
-                osc.start(t);
-                osc.stop(t + 0.15);
-
-                /* Üstüne kısa gürültü katmanı: daha "dertli" tını */
-                const osc2 = sesBaglami.createOscillator();
-                const gain2 = sesBaglami.createGain();
-                osc2.type = 'square';
-                osc2.frequency.setValueAtTime(140, t);
-                osc2.frequency.exponentialRampToValueAtTime(50, t + 0.1);
-
-                gain2.gain.setValueAtTime(0.2, t);
-                gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-
-                osc2.connect(gain2).connect(sesBaglami.destination);
-                osc2.start(t);
-                osc2.stop(t + 0.12);
-            } catch (hata) { /* ses çalınamadıysa sessizce devam */ }
-        }
-
-        /* Ortak: bir harf tuşunu işle (sayacı ve boyamayı yap) */
         function harfIsle(harf) {
             if (!durum.calisiyor) zamanlayiciBaslat();
-            durum.tus++;
-            const beklenen = akis[durum.index][durum.yazilan.length];
-            if (harf === beklenen) {
-                durum.dogruTus++;
-            } else {
-                yanlisSesiCal();               // DIRRT! yanlış harf uyarısı
-            }
+            const beklenen = durum.akis[durum.index][durum.yazilan.length];
+            if (harf === beklenen) durum.harf++;
+            else { durum.hatali++; yanlisSesiCal(); }
             durum.yazilan += harf;
             harfleriBoya();
         }
 
-        /* A) BİLGİSAYAR YOLU — tüm sayfa klavyeyi dinler */
         document.addEventListener('keydown', function (e) {
-            /* Sonuç ekranı açıkken: Enter = tekrar dene, ESC = kapat */
-            if (sonucModalEl.classList.contains('acik')) {
-                if (e.key === 'Enter') { sifirla(); odakla(); }
-                if (e.key === 'Escape') sifirla();
-                return;
-            }
-            if (durum.bitti) return;
-
-            /* ESC her yolda testi sıfırlar */
             if (e.key === 'Escape') { sifirla(); return; }
-
-            /* Hedef gizli input ise B yoluna bırak (çift sayma olmasın) */
-            if (e.target === girisiEl) return;
-
-            /* Ctrl / Alt / Meta tuşlarıyla gelenler (kopyala-yapıştır vb.) karışmasın */
+            if (durum.bitti) return;
+            if (e.target === girisiEl) return;             // telefon yoluna bırak
             if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-            /* Backspace = son harfi sil */
             if (e.key === 'Backspace') {
                 e.preventDefault();
                 if (durum.yazilan.length > 0) {
@@ -1351,184 +703,102 @@
                 return;
             }
 
-            /* Boşluk = kelimeyi onayla */
             if (e.key === ' ' || e.code === 'Space') {
                 e.preventDefault();
-                if (durum.yazilan.length > 0) kelimeGonder(durum.yazilan);
+                if (durum.yazilan.length > 0) grupGonder();
                 return;
             }
 
-            /* Tek karakter = harf (Türkçe ğ, ş, İ dahil).
-               isComposing: telefon/öngörülü klavye birleşimleri sayma */
             if (e.key && e.key.length === 1 && !e.isComposing) {
                 e.preventDefault();
                 harfIsle(e.key);
             }
         });
 
-        /* B) TELEFON YOLU — gizli input'un değeri değişince */
+        /* Telefon / odak-input yolu: değerin UZUNLUK FARKINA göre
+           harf harf işlenir (çift işlem olmasın). */
         girisiEl.addEventListener('input', function () {
             if (durum.bitti) { girisiEl.value = ''; return; }
-
             const v = girisiEl.value;
 
-            /* Boşluk basıldı -> kelimeyi onayla */
+            /* Boşluk = grubu gönder */
             if (v.endsWith(' ')) {
-                const yazilan = v.trim();
-                if (yazilan.length > 0) kelimeGonder(yazilan);
+                const y = v.trim();
+                if (y.length > 0) {
+                    durum.yazilan = y;        /* senkron */
+                    grupGonder();
+                }
                 girisiEl.value = '';
                 return;
             }
 
-            if (v.length > 0) {
-                durum.yazilan = v;
-                if (!durum.calisiyor) zamanlayiciBaslat();
-                harfleriBoya();
-            } else {
-                /* Silme (Backspace) input yolundan geldiyse */
-                durum.yazilan = '';
-                harfleriBoya();
+            /* Eklenen harfler: sırayla işle (harfIsle ekler) */
+            while (durum.yazilan.length < v.length) {
+                harfIsle(v[durum.yazilan.length]);
             }
+
+            /* Silinen harfler: geri al */
+            while (durum.yazilan.length > v.length) {
+                durum.yazilan = durum.yazilan.slice(0, -1);
+            }
+
+            harfleriBoya();
         });
 
-        /* Dokunma/klavye yardımı: input odaktan çıkarsa bir şey yapma;
-           mobilde tekrar dokununca değer temiz gelsin */
-        girisiEl.addEventListener('focus', function () { girisiEl.value = ''; });
-
-        /* TELEFON YOLUNDA yanlış harf sesi: input değerinin kelimeyle
-           eşleşmeyen ilk farkında çal */
-        girisiEl.addEventListener('input', function () {
-            if (durum.bitti) return;
-            const v = girisiEl.value.trim();
-            if (v.length === 0) return;
-            const kelime = akis[durum.index];
-            if (v.length <= kelime.length && v[v.length - 1] !== kelime[v.length - 1]) {
-                yanlisSesiCal();
-            }
-        });
-
-        /* Ekrana HERHANGİ bir yere dokunmak = klavyeyi aç (telefon).
-           Bilgisayarda gereksizdir ama zarar da vermez. */
         function odakla() {
             girisiEl.value = '';
             girisiEl.focus({ preventScroll: true });
         }
 
         document.addEventListener('pointerdown', function (e) {
-            /* Butonlara, tema paneline ve modal içine dokunma serbest */
-            if (e.target.closest('button') || e.target.closest('.modal')) return;
+            if (e.target.closest('button')) return;
             if (!durum.bitti) odakla();
         });
 
-        /* Sayfa açılır açılmaz yazmaya hazır ol: otomatik odak.
-           Tarayıcı engellerse kullanıcı ilk tuşta document yoluyla
-           yine yazabilir (yukarıdaki A yolu devrede). */
-        window.addEventListener('load', function () {
-            setTimeout(odakla, 50);
-        });
+        window.addEventListener('load', function () { setTimeout(odakla, 50); });
         odakla();
 
         /* =====================================================
-           12) İLERLEME YOLU (canlı seviye göstergesi)
-           -----------------------------------------------------
-           5 durak: geçilenler yeşil, o anki seviye büyür ve
-           mavi yanar. Kullanıcı buradan seviyesini izler.
+           10) SIFIRLAMA + BUTONLAR + BAŞLANGIÇ
            ===================================================== */
-        function ilerlemeYoluCiz(aktifSeviye) {
-            const yol = document.getElementById('ilerlemeYolu');
-            yol.innerHTML = '';
-
-            SEVIYELER.forEach(function (s, i) {
-                if (i > 0) {
-                    const ok = document.createElement('span');
-                    ok.className = 'durak-ok';
-                    ok.textContent = '›';
-                    yol.appendChild(ok);
-                }
-                const durak = document.createElement('div');
-                durak.className = 'durak' +
-                    (s.no === aktifSeviye.no ? ' aktif-durak' : '') +
-                    (s.no < aktifSeviye.no ? ' gectim' : '');
-                durak.innerHTML =
-                    '<div class="durak-emoji">' + s.emoji + '</div>' +
-                    '<div class="durak-bilgi">' + s.esik + (s.no === 5 ? '+' : '') + ' kelime</div>';
-                yol.appendChild(durak);
-            });
+        function sifirla() {
+            clearInterval(durum.zamanId);
+            const sv = durum.seviye;             // seviye korunur
+            durum = {
+                seviye: sv,
+                akis: [], kelimeEls: [],
+                index: 0, yazilan: '',
+                calisiyor: false, bitti: false,
+                baslangic: null, zamanId: null,
+                harf: 0, hatali: 0,
+                turGrup: 0, turDogru: 0, turToplam: 0
+            };
+            akisDoldur(20, true);
+            durum.kelimeEls[0].classList.add('aktif');
+            harfleriBoya();
+            baslaIpucuEl.classList.remove('gizli');
+            sayacGuncelle();
+            seviyeSeridiCiz();
+            odakla();
         }
 
-        /* =====================================================
-           13) BUTONLAR
-           ===================================================== */
-        document.getElementById('yenidenBtn').addEventListener('click', function () {
-            sifirla();
-            odakla();
-        });
+        document.getElementById('yenidenBtn').addEventListener('click', sifirla);
 
-        document.getElementById('tekrarBtn').addEventListener('click', function () {
-            sifirla();
-            odakla();
-        });
-
-        document.getElementById('seviyeBtn').addEventListener('click', function () {
-            sifirla();
-            odakla();
-        });
-
-        /* =====================================================
-           13b) SES BUTONU (yanlış harf uyarısını aç/kapat)
-           ===================================================== */
         const sesBtnEl = document.getElementById('sesBtn');
-
+        function sesBtnGuncelle() {
+            sesBtnEl.textContent = sesAcik ? '🔊 Ses Açık' : '🔇 Ses Kapalı';
+        }
         sesBtnEl.addEventListener('click', function () {
             sesAcik = !sesAcik;
-            sesBtnEl.textContent = sesAcik ? '🔊 Ses Açık' : '🔇 Ses Kapalı';
             localStorage.setItem('klavye_ses', sesAcik ? '1' : '0');
-            if (sesAcik) yanlisSesiCal();   /* örnek ses çal */
+            sesBtnGuncelle();
+            if (sesAcik) yanlisSesiCal();
         });
 
-        /* =====================================================
-           14) TEMA BUTONU (açılır panel)
-           ===================================================== */
-        const temaBtnEl = document.getElementById('temaBtn');
-
-        temaBtnEl.addEventListener('click', function (e) {
-            e.stopPropagation();
-            document.getElementById('temaPanel').classList.toggle('acik');
-        });
-
-        /* Panel dışına tıklayınca kapan */
-        document.addEventListener('pointerdown', function (e) {
-            const panel = document.getElementById('temaPanel');
-            if (panel.classList.contains('acik') && !e.target.closest('.tema-kapsayici')) {
-                panel.classList.remove('acik');
-            }
-        });
-
-        /* =====================================================
-           15) BAŞLANGIÇ
-           ===================================================== */
         (function basla() {
-            try {
-                const kayitli = localStorage.getItem(KAYIT_ANAHTARI);
-                if (kayitli) rekorlar = JSON.parse(kayitli) || {};
-
-                genelRekor = parseInt(localStorage.getItem(REKOR_GENEL_KEY)) || 0;
-                document.getElementById('genelRekor').textContent = genelRekor;
-
-                /* Ses tercihi kayıtlıysa uygula */
-                const sesKayit = localStorage.getItem('klavye_ses');
-                if (sesKayit === '0') {
-                    sesAcik = false;
-                    sesBtnEl.textContent = '🔇 Ses Kapalı';
-                }
-
-                /* Kaydedilmiş temayı yükle (yoksa varsayılan siyah) */
-                const kayitliTema = localStorage.getItem(TEMA_ANAHTARI);
-                const t = TEMALAR.find(function (x) { return x.id === kayitliTema; });
-                if (t) seciliTema = t;
-            } catch (hata) { /* kayıt okunamadıysa boş devam */ }
-
-            temaUygula(seciliTema);
+            const kayitli = parseInt(localStorage.getItem('drill_seviye'));
+            if (kayitli >= 1 && kayitli <= 12) durum.seviye = kayitli;
+            sesBtnGuncelle();
             sifirla();
         })();
     </script>
