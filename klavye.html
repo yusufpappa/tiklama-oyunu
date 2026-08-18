@@ -425,6 +425,94 @@
 
         .bildirim.gorunur { transform: translateX(-50%) translateY(0); }
 
+        /* ===== SANAL KLAVYE (parmak renkli Türkçe Q) ===== */
+        .sanal-klavye {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+            padding: 14px 12px 10px;
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 16px;
+        }
+
+        .kb-baslik {
+            font-size: 11px;
+            color: var(--yazi-ikincil);
+            margin-bottom: 6px;
+        }
+
+        .kb-satir { display: flex; gap: 5px; width: 100%; justify-content: center; }
+
+        .kb-tus {
+            flex: 1;
+            max-width: 46px;
+            height: 42px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-weight: 800;
+            font-size: 15px;
+            color: #0f1115;
+            position: relative;
+            transition: transform 0.08s, box-shadow 0.12s, filter 0.12s;
+        }
+
+        /* Ev sırası (asdf jklş) işareti */
+        .kb-tus.ev-tusu::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 55%;
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(15, 17, 21, 0.45);
+        }
+
+        /* Sıradaki tuş: yükselir ve beyaz çerçeve alır */
+        .kb-tus.siradaki {
+            transform: translateY(-5px) scale(1.1);
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22), 0 8px 16px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+
+        .kb-tus.basildi-dogru { filter: brightness(1.4); transform: scale(0.9); }
+        .kb-tus.basildi-yanlis { background: var(--kirmizi) !important; color: #fff; transform: scale(0.9); }
+
+        .kb-bosluk {
+            max-width: 300px;
+            min-width: 170px;
+            flex: 0 0 auto;
+            width: 46%;
+            font-size: 11px;
+            letter-spacing: 3px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        /* Zayıf harf satırı */
+        .zayif-satiri {
+            text-align: center;
+            font-size: 12px;
+            color: var(--yazi-ikincil);
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 12px;
+            padding: 9px;
+        }
+
+        .zayif-satiri b {
+            color: var(--vurgu);
+            font-size: 15px;
+            letter-spacing: 3px;
+            margin: 0 2px;
+        }
+
         @media (max-width: 560px) {
             .kelime-akis { font-size: 22px; line-height: 30px; gap: 10px 22px; letter-spacing: 4px; }
             .kelime-alani { height: 120px; }
@@ -432,6 +520,8 @@
             .seviyeler { grid-template-columns: repeat(5, 1fr); }
             .seviye-kart .no { font-size: 13px; }
             .seviye-kart .ad { font-size: 8px; }
+            .kb-tus { height: 34px; font-size: 12px; max-width: 34px; border-radius: 6px; }
+            .kb-bosluk { width: 40%; }
         }
     </style>
 </head>
@@ -479,6 +569,17 @@
 
             <input type="text" id="girisi" autocomplete="off" autocorrect="off"
                    autocapitalize="off" spellcheck="false">
+        </div>
+
+        <!-- ============ SANAL KLAVYE ============ -->
+        <div class="sanal-klavye" id="sanalKlavye">
+            <div class="kb-baslik">👇 Sıradaki tuş yukarı kalkar — renkler parmakları gösterir</div>
+            <!-- Tuşlar JavaScript ile çizilir -->
+        </div>
+
+        <!-- ============ ZAYIF HARFLER ============ -->
+        <div class="zayif-satiri" id="zayifSatiri">
+            💪 Zayıf harflerin: <b id="zayifHarfler">—</b> <span style="font-size: 10px;">(gruplara daha sık karıştırılıyor)</span>
         </div>
 
         <!-- ============ ALT SAYAÇ ============ -->
@@ -568,6 +669,125 @@
         }
 
         /* =====================================================
+           1b) SANAL KLAVYE (Türkçe Q) — parmak renkleri
+           -----------------------------------------------------
+           Her tuş: [harf, satır, kolon, el, parmak(0-3), renk]
+           Parmak renkleri: sol el soluk tonlar, sağ el sıcak tonlar;
+           serçe→işaret ayrımı renk yoğunluğuyla hissedilir.
+           ===================================================== */
+        const PARMAK_RENKLERI = {
+            L0: '#8ecae6', L1: '#90be6d', L2: '#f9c74f', L3: '#f8961e',   // sol el: serçe→işaret
+            R0: '#f4a6c0', R1: '#c77dff', R2: '#7bdff2', R3: '#b5e48c',   // sağ el: serçe→işaret
+            TB: '#9aa0b5'                                                  // başparmak (boşluk)
+        };
+
+        const KB_SATIRLAR = [
+            [   ['q', 'L0'], ['w', 'L1'], ['e', 'L2'], ['r', 'L3'], ['t', 'L3'],
+                ['y', 'R3'], ['u', 'R3'], ['ı', 'R2'], ['o', 'R1'], ['p', 'R0'],
+                ['ğ', 'R0'], ['ü', 'R0'] ],
+            [   ['a', 'L0', true], ['s', 'L1', true], ['d', 'L2', true], ['f', 'L3', true], ['g', 'L3'],
+                ['h', 'R3'], ['j', 'R3', true], ['k', 'R2', true], ['l', 'R1', true], ['ş', 'R0', true],
+                ['i', 'R0'] ],
+            [   ['z', 'L0'], ['x', 'L1'], ['c', 'L2'], ['v', 'L3'], ['b', 'L3'],
+                ['n', 'R3'], ['m', 'R3'], ['ö', 'R2'], ['ç', 'R1'] ]
+        ];
+
+        const kbTuslar = {};         // harf -> tuş elemanı
+
+        function sanalKlavyeCiz() {
+            const kapsayici = document.getElementById('sanalKlavye');
+            /* başlık hariç eski içerik temizle */
+            kapsayici.querySelectorAll('.kb-satir').forEach(r => r.remove());
+
+            KB_SATIRLAR.forEach(function (satir) {
+                const sEl = document.createElement('div');
+                sEl.className = 'kb-satir';
+                satir.forEach(function (t) {
+                    const tus = document.createElement('div');
+                    tus.className = 'kb-tus' + (t[2] ? ' ev-tusu' : '');
+                    tus.textContent = t[0];
+                    tus.style.background = PARMAK_RENKLERI[t[1]];
+                    kbTuslar[t[0]] = tus;
+                    sEl.appendChild(tus);
+                });
+                kapsayici.appendChild(sEl);
+            });
+
+            /* Boşluk tuşu */
+            const bs = document.createElement('div');
+            bs.className = 'kb-satir';
+            const bosluk = document.createElement('div');
+            bosluk.className = 'kb-tus kb-bosluk';
+            bosluk.textContent = 'BOŞLUK';
+            bosluk.style.background = PARMAK_RENKLERI.TB;
+            kbTuslar[' '] = bosluk;
+            bs.appendChild(bosluk);
+            kapsayici.appendChild(bs);
+        }
+
+        /* Sıradaki harfe göre klavyede vurgu güncelle */
+        function klavyeVurgula(siradaki, sonuc) {
+            /* Önceki vurguları temizle */
+            Object.values(kbTuslar).forEach(function (t) {
+                t.classList.remove('siradaki', 'basildi-dogru', 'basildi-yanlis');
+            });
+            if (siradaki === undefined || siradaki === null) return;
+            const t = kbTuslar[siradaki.toLowerCase ? siradaki.toLowerCase() : ' '];
+            if (!t) return;
+            t.classList.add('siradaki');
+            if (sonuc === 'd') t.classList.add('basildi-dogru');
+            if (sonuc === 'y') t.classList.add('basildi-yanlis');
+        }
+
+        /* =====================================================
+           1c) ZAYIF HARF TAKİBİ
+           -----------------------------------------------------
+           Her harf için doğru/yanlış sayısı tutulur.
+           Hata oranı %20'yi aşayan harfler "zayıf" kabul edilir
+           ve yeni gruplarda 2.5 kat daha sık seçilir.
+           ===================================================== */
+        const ZAYIF_KEY = 'klavye_harf_istatistik';
+        let harfIstatistik = {};     // { harf: {d: doğru, y: yanlış} }
+
+        function harfIstatistikYukle() {
+            try {
+                const k = localStorage.getItem(ZAYIF_KEY);
+                if (k) harfIstatistik = JSON.parse(k) || {};
+            } catch (h) { harfIstatistik = {}; }
+        }
+
+        function harfIstatistikKaydet() {
+            try { localStorage.setItem(ZAYIF_KEY, JSON.stringify(harfIstatistik)); } catch (h) {}
+        }
+
+        function harfKayit(harf, dogruMu) {
+            if (!harfIstatistik[harf]) harfIstatistik[harf] = { d: 0, y: 0 };
+            if (dogruMu) harfIstatistik[harf].d++;
+            else harfIstatistik[harf].y++;
+            harfIstatistikKaydet();
+        }
+
+        /* Zayıf harfleri getir: en az 4 deneme + %20'den fazla hata */
+        function zayifHarfleriGetir() {
+            const zayif = [];
+            for (const h in harfIstatistik) {
+                const s = harfIstatistik[h];
+                const toplam = s.d + s.y;
+                if (toplam >= 4 && s.y / toplam > 0.20) {
+                    zayif.push({ h: h, oran: s.y / toplam });
+                }
+            }
+            zayif.sort((a, b) => b.oran - a.oran);
+            return zayif.slice(0, 5).map(z => z.h);
+        }
+
+        function zayifSatiriGuncelle() {
+            const list = zayifHarfleriGetir();
+            document.getElementById('zayifHarfler').textContent =
+                list.length > 0 ? list.join('  ') : '—';
+        }
+
+        /* =====================================================
            2) 10 SEVİYE: 9 HARF + 1 KELİME
            -----------------------------------------------------
            1-9: harf grupları (min/max güçlük aralığı yükselir)
@@ -622,7 +842,8 @@
 
         /* Seviyeye uygun grup üretir.
            1-9: 3-4 harflik gruplar (güçlük aralığına göre)
-           10: normal Türkçe kelime */
+           10: normal Türkçe kelime
+           ZAYIF harfler havuzda 2.5 kat fazla temsil edilir. */
         function grupUret() {
             const sv = SEVIYELER[durum.seviye - 1];
 
@@ -631,7 +852,13 @@
                 return KELIMELER[Math.floor(Math.random() * KELIMELER.length)];
             }
 
-            const havuz = sv.tuslar.split('');
+            /* Zayıf harfler bu seviyenin havuzundaysa ekstra ekle */
+            const zayif = zayifHarfleriGetir();
+            let havuzDizi = sv.tuslar.split('');
+            for (const zh of zayif) {
+                if (sv.tuslar.includes(zh)) havuzDizi.push(zh, zh);  // 2 kopya = ~3x sık
+            }
+            const havuz = havuzDizi;
             const uzunluk = Math.random() < 0.5 ? 3 : 4;
 
             let enIyi = null, enIyiFark = 999;
@@ -900,10 +1127,25 @@
             if (!durum.calisiyor) zamanlayiciBaslat();
             durum.tus++;
             const beklenen = durum.akis[durum.index][durum.yazilan.length];
-            if (harf === beklenen) durum.harf++;
-            else { durum.hatali++; yanlisSesiCal(); }
+            let sonuc;
+            if (harf === beklenen) {
+                durum.harf++;
+                sonuc = 'd';
+            } else {
+                durum.hatali++;
+                yanlisSesiCal();
+                sonuc = 'y';
+            }
+            harfKayit(beklenen, sonuc === 'd');     // zayıf harf istatistiği
             durum.yazilan += harf;
             harfleriBoya();
+
+            /* Sanal klavyede sıradaki tuşu göster */
+            const siradaki = durum.akis[durum.index][durum.yazilan.length];
+            klavyeVurgula(siradaki);
+            if (kbTuslar[beklenen]) {
+                kbTuslar[beklenen].classList.add(sonuc === 'd' ? 'basildi-dogru' : 'basildi-yanlis');
+            }
         }
 
         document.addEventListener('keydown', function (e) {
@@ -1004,7 +1246,11 @@
             document.getElementById('kalanSure').textContent = '⏱️ ' + SURE + ' sn';
             sayacGuncelle();
             seviyeSeridiCiz();
+            zayifSatiriGuncelle();
             odakla();
+
+            /* Yeni akışın ilk tuşunu klavyede göster */
+            klavyeVurgula(durum.akis[0][0]);
         }
 
         document.getElementById('yenidenBtn').addEventListener('click', sifirla);
@@ -1036,8 +1282,14 @@
             const kayitli = parseInt(localStorage.getItem('drill_seviye'));
             if (kayitli >= 1 && kayitli <= 10) durum.seviye = kayitli;
             sesBtnGuncelle();
+            sanalKlavyeCiz();
+            harfIstatistikYukle();
+            zayifSatiriGuncelle();
             seviyeKartlariCiz();
             sifirla();
+
+            /* İlk sıradaki tuşu göster */
+            klavyeVurgula(durum.akis[0][0]);
         })();
     </script>
 </body>
