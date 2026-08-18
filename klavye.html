@@ -207,7 +207,7 @@
 
         .sonuc-izgara {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             margin-top: 16px;
         }
@@ -381,7 +381,7 @@
         /* ===== ALT SAYAÇ (kaç saniyede kaç harf) ===== */
         .alt-istatistikler {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
         }
 
@@ -404,6 +404,99 @@
         .harf-kutusu .alt-istat-deger { color: var(--yesil); }
         .sure-kutusu .alt-istat-deger { color: var(--vurgu); }
         .hiz-kutusu .alt-istat-deger { color: var(--vurgu-2); }
+        .wpm-kutusu .alt-istat-deger { color: #c77dff; }
+
+        /* ===== İLERLEME PANELİ (grafik + gün serisi) ===== */
+        .ilerleme-paneli {
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .ilerleme-ust {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .ilerleme-baslik { font-size: 13px; font-weight: 800; }
+
+        .streak-rozeti {
+            font-size: 12px;
+            font-weight: 700;
+            background: rgba(255, 201, 60, 0.12);
+            border: 1px solid rgba(255, 201, 60, 0.35);
+            color: var(--vurgu);
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+
+        .grafik-kapsayici {
+            margin-top: 12px;
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 110px;
+            padding-top: 6px;
+        }
+
+        .grafik-cubuk {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .cubuk {
+            width: 100%;
+            max-width: 38px;
+            border-radius: 6px 6px 0 0;
+            background: linear-gradient(180deg, var(--vurgu-2), #2a7fa8);
+            min-height: 3px;
+            transition: height 0.3s;
+            position: relative;
+        }
+
+        .cubuk.bugun { background: linear-gradient(180deg, var(--vurgu), #b8860b); }
+
+        .cubuk .deger {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--yazi-ikincil);
+            white-space: nowrap;
+        }
+
+        .grafik-gunler {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .grafik-gunler span {
+            flex: 1;
+            text-align: center;
+            font-size: 9px;
+            color: var(--yazi-ikincil);
+        }
+
+        .ilerleme-bos { font-size: 12px; color: var(--yazi-ikincil); margin-top: 10px; }
+
+        /* ===== ISI HARİTASI AÇ/KAPA ===== */
+        .isi-btn {
+            font-size: 11px;
+            padding: 4px 10px;
+        }
 
         /* ===== BİLDİRİM (seviye atlama) ===== */
         .bildirim {
@@ -522,6 +615,7 @@
             .seviye-kart .ad { font-size: 8px; }
             .kb-tus { height: 34px; font-size: 12px; max-width: 34px; border-radius: 6px; }
             .kb-bosluk { width: 40%; }
+            .alt-istatistikler { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -573,13 +667,29 @@
 
         <!-- ============ SANAL KLAVYE ============ -->
         <div class="sanal-klavye" id="sanalKlavye">
-            <div class="kb-baslik">👇 Sıradaki tuş yukarı kalkar — renkler parmakları gösterir</div>
+            <div class="kb-baslik" style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span>👇 Sıradaki tuş yukarı kalkar — renkler parmakları gösterir</span>
+                <button class="yeniden-btn isi-btn" id="isiBtn">🔥 Isı Haritası</button>
+            </div>
             <!-- Tuşlar JavaScript ile çizilir -->
         </div>
 
         <!-- ============ ZAYIF HARFLER ============ -->
         <div class="zayif-satiri" id="zayifSatiri">
             💪 Zayıf harflerin: <b id="zayifHarfler">—</b> <span style="font-size: 10px;">(gruplara daha sık karıştırılıyor)</span>
+        </div>
+
+        <!-- ============ İLERLEME PANELİ ============ -->
+        <div class="ilerleme-paneli">
+            <div class="ilerleme-ust">
+                <div class="ilerleme-baslik">📈 Son 7 Günün Hızı (WPM)</div>
+                <div class="streak-rozeti" id="streakRozeti">🔥 0 gün</div>
+            </div>
+            <div class="grafik-kapsayici" id="grafikKapsayici"></div>
+            <div class="grafik-gunler" id="grafikGunler"></div>
+            <div class="ilerleme-bos" id="ilerlemeBos" style="display:none;">
+                Testleri tamamladıkça günlük hızların burada grafik halinde birikecek.
+            </div>
         </div>
 
         <!-- ============ ALT SAYAÇ ============ -->
@@ -596,6 +706,10 @@
                 <div class="alt-istat-deger" id="harfHiz">0.0</div>
                 <div class="alt-istat-etiket">⚡ Harf / Saniye</div>
             </div>
+            <div class="alt-istat wpm-kutusu">
+                <div class="alt-istat-deger" id="wpmDeger">0</div>
+                <div class="alt-istat-etiket">🏁 WPM</div>
+            </div>
         </div>
     </div>
 
@@ -611,6 +725,10 @@
             </div>
 
             <div class="sonuc-izgara">
+                <div class="sonuc-kutu">
+                    <div class="sonuc-kutu-deger" id="sonucWpm" style="color: #c77dff;">0</div>
+                    <div class="sonuc-kutu-etiket">🏁 WPM</div>
+                </div>
                 <div class="sonuc-kutu">
                     <div class="sonuc-kutu-deger" id="sonucHarf" style="color: var(--yesil);">0</div>
                     <div class="sonuc-kutu-etiket">Doğru Harf</div>
@@ -1015,14 +1133,24 @@
         }
 
         /* =====================================================
-           7) SAYAÇ + 60 SANİYE ZAMANLAYICI
+           7) SAYAÇ + WPM + 60 SANİYE ZAMANLAYICI
+           -----------------------------------------------------
+           WPM = (doğru karakter / 5) / dakika  (standart formül:
+           1 "kelime" = 5 karakter, boşluklar dahil)
            ===================================================== */
+        function wpmHesapla(dogruHarf, gecenSaniye) {
+            if (gecenSaniye <= 0) return 0;
+            return (dogruHarf / 5) / (gecenSaniye / 60);
+        }
+
         function sayacGuncelle() {
             document.getElementById('harfSayisi').textContent = durum.harf;
             const gecen = durum.baslangic ? (Date.now() - durum.baslangic) / 1000 : 0;
             document.getElementById('gecenSure').textContent = gecen.toFixed(1);
             document.getElementById('harfHiz').textContent =
                 gecen > 0 ? (durum.harf / gecen).toFixed(1) : '0.0';
+            document.getElementById('wpmDeger').textContent =
+                Math.round(wpmHesapla(durum.harf, gecen));
 
             /* Kalan süre şeritte */
             if (durum.calisiyor) {
@@ -1054,9 +1182,13 @@
 
             const gecen = durum.baslangic ? (Date.now() - durum.baslangic) / 1000 : SURE;
             const hiz = gecen > 0 ? durum.harf / gecen : 0;
+            const wpm = wpmHesapla(durum.harf, gecen);
             const dogruluk = durum.tus > 0 ? durum.harf / durum.tus : 1;
             const oneri = oneriBul(hiz, dogruluk);
             const oneriSv = SEVIYELER[oneri - 1];
+
+            /* Bugünün kaydını güncelle (en iyi WPM) */
+            gunlukKayitEkle(Math.round(wpm));
 
             /* Öneri rozetini doldur */
             document.getElementById('oneriSeviye').innerHTML =
@@ -1066,13 +1198,176 @@
                     ? '👑 Harika! Kelime seviyesine hazırsın.'
                     : 'Hedefin: ' + oneriSv.hizEsik + ' harf/sn (şu an: ' + hiz.toFixed(1) + ')';
 
+            document.getElementById('sonucWpm').textContent = Math.round(wpm);
             document.getElementById('sonucHarf').textContent = durum.harf;
             document.getElementById('sonucHiz').textContent = hiz.toFixed(1);
             document.getElementById('sonucDogruluk').textContent =
                 '%' + Math.round(dogruluk * 100);
 
             document.getElementById('sonucModal').classList.add('acik');
+            ilerlemePaneliCiz();     // grafik + streak tazele
         }
+
+        /* =====================================================
+           7c) İLERLEME: GÜNLÜK KAYIT + GRAFİK + STREAK
+           -----------------------------------------------------
+           Her günün en iyi WPM'si kaydedilir; son 7 gün
+           çubuk grafikte gösterilir. Streak = art arda çalışılan
+           gün sayısı (bir gün atlanırsa sıfırlanır).
+           ===================================================== */
+        const GUNLUK_KEY = 'klavye_gunluk_wpm';
+        let gunlukWpm = {};          // { 'YYYY-AA-GG': enIyiWpm }
+
+        function gunlukYukle() {
+            try {
+                const k = localStorage.getItem(GUNLUK_KEY);
+                if (k) gunlukWpm = JSON.parse(k) || {};
+            } catch (h) { gunlukWpm = {}; }
+        }
+
+        function bugunAnahtari() {
+            const d = new Date();
+            return d.getFullYear() + '-' +
+                   String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                   String(d.getDate()).padStart(2, '0');
+        }
+
+        function gunlukKayitEkle(wpm) {
+            const a = bugunAnahtari();
+            if (!gunlukWpm[a] || wpm > gunlukWpm[a]) gunlukWpm[a] = wpm;
+            try { localStorage.setItem(GUNLUK_KEY, JSON.stringify(gunlukWpm)); } catch (h) {}
+        }
+
+        /* Streak: bugün dahil geriye doğru kesintisiz gün sayısı */
+        function streakHesapla() {
+            let s = 0;
+            const d = new Date();
+            for (;;) {
+                const a = d.getFullYear() + '-' +
+                          String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                          String(d.getDate()).padStart(2, '0');
+                if (gunlukWpm[a]) { s++; d.setDate(d.getDate() - 1); }
+                else break;
+            }
+            return s;
+        }
+
+        /* Son 7 gün çubuk grafiği */
+        function ilerlemePaneliCiz() {
+            const kapsayici = document.getElementById('grafikKapsayici');
+            const gunlerEl = document.getElementById('grafikGunler');
+            const bosEl = document.getElementById('ilerlemeBos');
+            kapsayici.innerHTML = '';
+            gunlerEl.innerHTML = '';
+
+            /* Son 7 günü topla */
+            const gunler = [];
+            const d = new Date();
+            d.setDate(d.getDate() - 6);
+            for (let i = 0; i < 7; i++) {
+                const a = d.getFullYear() + '-' +
+                          String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                          String(d.getDate()).padStart(2, '0');
+                gunler.push({ anahtar: a, wpm: gunlukWpm[a] || 0, etiket: ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'][d.getDay() === 0 ? 6 : d.getDay() - 1] });
+                d.setDate(d.getDate() + 1);
+            }
+
+            const maxWpm = Math.max(10, ...gunler.map(g => g.wpm));
+            const bugunA = bugunAnahtari();
+            const kayitVar = gunler.some(g => g.wpm > 0);
+
+            if (!kayitVar) {
+                bosEl.style.display = 'block';
+                document.getElementById('streakRozeti').textContent = '🔥 0 gün';
+                return;
+            }
+            bosEl.style.display = 'none';
+
+            gunler.forEach(function (g) {
+                const sutun = document.createElement('div');
+                sutun.className = 'grafik-cubuk';
+
+                const cubuk = document.createElement('div');
+                cubuk.className = 'cubuk' + (g.anahtar === bugunA ? ' bugun' : '');
+                cubuk.style.height = Math.max(3, (g.wpm / maxWpm) * 100) + '%';
+                if (g.wpm > 0) {
+                    const deger = document.createElement('span');
+                    deger.className = 'deger';
+                    deger.textContent = g.wpm;
+                    cubuk.appendChild(deger);
+                }
+                sutun.appendChild(cubuk);
+                kapsayici.appendChild(sutun);
+
+                const et = document.createElement('span');
+                et.textContent = g.anahtar === bugunA ? 'BUGÜN' : g.etiket;
+                if (g.anahtar === bugunA) et.style.color = 'var(--vurgu)';
+                gunlerEl.appendChild(et);
+            });
+
+            const st = streakHesapla();
+            document.getElementById('streakRozeti').textContent =
+                '🔥 ' + st + ' gün' + (st >= 3 ? ' serisin devam ediyor!' : '');
+        }
+
+        /* =====================================================
+           7d) ISI HARİTASI
+           -----------------------------------------------------
+           Sanal klavyeyi hata oranına göre renklendirir:
+           yeşil (temiz) -> sarı -> kırmızı (çok hata).
+           Butonla normal parmak-renk görünümüyle geçiş yapılır.
+           ===================================================== */
+        let isiModu = false;
+
+        /* Bir tuşun hata oranını 0-1 aralığında döndürür */
+        function hataOrani(harf) {
+            const s = harfIstatistik[harf];
+            if (!s) return 0;
+            const toplam = s.d + s.y;
+            return toplam > 0 ? s.y / toplam : 0;
+        }
+
+        /* Isı haritası rengi: yeşil -> sarı -> kırmızı */
+        function isiRengi(oran) {
+            if (oran <= 0.05) return '#22c55e';       // temiz
+            if (oran <= 0.15) return '#a3e635';       // hafif
+            if (oran <= 0.30) return '#facc15';       // sarı
+            if (oran <= 0.50) return '#fb923c';       // turuncu
+            return '#ef4444';                          // çok hatalı
+        }
+
+        function isiHaritasiUygula() {
+            Object.keys(kbTuslar).forEach(function (h) {
+                if (h === ' ') return;
+                const tus = kbTuslar[h];
+                if (isiModu) {
+                    const s = harfIstatistik[h];
+                    const oran = hataOrani(h);
+                    const toplam = s ? s.d + s.y : 0;
+                    if (toplam >= 3) {
+                        tus.style.background = isiRengi(oran);
+                        tus.title = h.toUpperCase() + ' — hata %' + Math.round(oran * 100) +
+                                    ' (' + toplam + ' deneme)';
+                    } else {
+                        tus.style.background = '#374151';   // yeterli veri yok
+                        tus.title = h.toUpperCase() + ' — yeterli veri yok';
+                    }
+                } else {
+                    /* normal parmak rengine dön */
+                    const satir = KB_SATIRLAR.flat().find(t => t[0] === h);
+                    if (satir) tus.style.background = PARMAK_RENKLERI[satir[1]];
+                    tus.title = '';
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('isiBtn').addEventListener('click', function () {
+                isiModu = !isiModu;
+                this.textContent = isiModu ? '🎨 Parmak Renkleri' : '🔥 Isı Haritası';
+                isiHaritasiUygula();
+            });
+        });
 
         /* =====================================================
            8) SEVİYE ŞERİDİ + SEVİYE KARTLARI + BİLDİRİM
@@ -1284,7 +1579,9 @@
             sesBtnGuncelle();
             sanalKlavyeCiz();
             harfIstatistikYukle();
+            gunlukYukle();
             zayifSatiriGuncelle();
+            ilerlemePaneliCiz();
             seviyeKartlariCiz();
             sifirla();
 
