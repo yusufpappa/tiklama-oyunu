@@ -241,6 +241,40 @@
         .btn-ikincil:hover { background: #2c313c; }
 
         /* ===== TEST ALANI ===== */
+        /* ===== ÜST CANLI SAYAÇ (yazarken görünür) ===== */
+        .canli-sayac {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .canli-kutu {
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 14px;
+            padding: 10px 8px;
+            text-align: center;
+        }
+
+        .canli-deger {
+            font-size: clamp(22px, 5.5vw, 30px);
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            line-height: 1.1;
+        }
+
+        .canli-etiket { font-size: 10px; color: var(--yazi-ikincil); margin-top: 2px; }
+
+        .canli-kutu.sure-kutu .canli-deger { color: var(--vurgu); }
+        .canli-kutu.wpm-kutu .canli-deger { color: #c77dff; }
+        .canli-kutu.hiz-kutu .canli-deger { color: var(--vurgu-2); }
+
+        /* Son 10 saniyede süre kırmızı yanıp söner */
+        .canli-kutu.sure-kutu.son-10 .canli-deger {
+            color: var(--kirmizi);
+            animation: nabiz 1s infinite;
+        }
+
         .test-alani {
             background: #000000;
             border: 1px solid var(--kenarlik);
@@ -642,6 +676,22 @@
             <div class="seviye-not" id="seviyeNot">60 saniye boyunca yaz — sonunda seviyen söylenir</div>
         </div>
 
+        <!-- ============ CANLI SAYAÇ (test alanının üstünde) ============ -->
+        <div class="canli-sayac">
+            <div class="canli-kutu sure-kutu" id="canliSureKutusu">
+                <div class="canli-deger" id="canliSure">60</div>
+                <div class="canli-etiket">⏱️ Kalan Süre (sn)</div>
+            </div>
+            <div class="canli-kutu wpm-kutu">
+                <div class="canli-deger" id="canliWpm">0</div>
+                <div class="canli-etiket">🏁 WPM</div>
+            </div>
+            <div class="canli-kutu hiz-kutu">
+                <div class="canli-deger" id="canliHiz">0.0</div>
+                <div class="canli-etiket">⚡ Harf/Saniye</div>
+            </div>
+        </div>
+
         <!-- ============ TEST ALANI ============ -->
         <div class="test-alani" id="testAlani">
             <div class="kelime-alani">
@@ -700,15 +750,7 @@
             </div>
             <div class="alt-istat sure-kutusu">
                 <div class="alt-istat-deger" id="gecenSure">0.0</div>
-                <div class="alt-istat-etiket">⏱️ Saniye</div>
-            </div>
-            <div class="alt-istat hiz-kutusu">
-                <div class="alt-istat-deger" id="harfHiz">0.0</div>
-                <div class="alt-istat-etiket">⚡ Harf / Saniye</div>
-            </div>
-            <div class="alt-istat wpm-kutusu">
-                <div class="alt-istat-deger" id="wpmDeger">0</div>
-                <div class="alt-istat-etiket">🏁 WPM</div>
+                <div class="alt-istat-etiket">⏱️ Geçen Saniye</div>
             </div>
         </div>
     </div>
@@ -1147,15 +1189,23 @@
             document.getElementById('harfSayisi').textContent = durum.harf;
             const gecen = durum.baslangic ? (Date.now() - durum.baslangic) / 1000 : 0;
             document.getElementById('gecenSure').textContent = gecen.toFixed(1);
-            document.getElementById('harfHiz').textContent =
-                gecen > 0 ? (durum.harf / gecen).toFixed(1) : '0.0';
-            document.getElementById('wpmDeger').textContent =
-                Math.round(wpmHesapla(durum.harf, gecen));
 
-            /* Kalan süre şeritte */
+            /* ÜST CANLI SAYAÇ: WPM + hız + kalan süre yazarken görünür */
+            document.getElementById('canliWpm').textContent =
+                Math.round(wpmHesapla(durum.harf, gecen));
+            document.getElementById('canliHiz').textContent =
+                gecen > 0 ? (durum.harf / gecen).toFixed(1) : '0.0';
+
+            /* Kalan süre */
             if (durum.calisiyor) {
                 const kalan = Math.max(0, SURE - gecen);
-                document.getElementById('kalanSure').textContent = '⏱️ ' + Math.ceil(kalan) + ' sn';
+                const kalanTam = Math.ceil(kalan);
+                document.getElementById('canliSure').textContent = kalanTam;
+                document.getElementById('kalanSure').textContent = '⏱️ ' + kalanTam + ' sn';
+
+                /* Son 10 saniyede kırmızı yanıp sön */
+                document.getElementById('canliSureKutusu').classList.toggle('son-10', kalan <= 10 && kalan > 0);
+
                 if (kalan <= 0) testiBitir();
             }
         }
@@ -1539,6 +1589,10 @@
             baslaIpucuEl.classList.remove('gizli');
             document.getElementById('sonucModal').classList.remove('acik');
             document.getElementById('kalanSure').textContent = '⏱️ ' + SURE + ' sn';
+            document.getElementById('canliSure').textContent = SURE;
+            document.getElementById('canliWpm').textContent = '0';
+            document.getElementById('canliHiz').textContent = '0.0';
+            document.getElementById('canliSureKutusu').classList.remove('son-10');
             sayacGuncelle();
             seviyeSeridiCiz();
             zayifSatiriGuncelle();
