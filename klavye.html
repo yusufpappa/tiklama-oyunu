@@ -743,23 +743,69 @@
 
         .bildirim.gorunur { transform: translateX(-50%) translateY(0); }
 
-        /* ===== SANAL KLAVYE (parmak renkli Türkçe Q) ===== */
+        /* ===== SANAL KLAVYE (renksiz + yanlarda eller) ===== */
+        .klavye-kapsayici {
+            background: var(--panel);
+            border: 1px solid var(--kenarlik);
+            border-radius: 16px;
+            padding: 12px 10px 10px;
+        }
+
+        .klavye-ust {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 0 4px;
+        }
+
+        .renk-btn {
+            background: var(--panel-acik);
+            color: var(--yazi);
+            border: 1px solid var(--kenarlik);
+            border-radius: 8px;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .renk-btn:hover { background: #2c313c; }
+
+        .klavye-notu { font-size: 10px; color: var(--yazi-ikincil); text-align: right; }
+
+        .klavye-govde { display: flex; gap: 10px; align-items: center; }
+
         .sanal-klavye {
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 6px;
             align-items: center;
-            padding: 14px 12px 10px;
-            background: var(--panel);
-            border: 1px solid var(--kenarlik);
-            border-radius: 16px;
+            min-width: 0;
         }
 
-        .kb-baslik {
-            font-size: 11px;
-            color: var(--yazi-ikincil);
-            margin-bottom: 6px;
+        /* ===== YAN ELLER (SVG el çizimi) ===== */
+        .yan-el {
+            flex: 0 0 76px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
+
+        .yan-el svg { width: 100%; height: auto; }
+
+        .yan-el-aciklama {
+            font-size: 9px;
+            color: var(--yazi-ikincil);
+            text-align: center;
+            line-height: 1.35;
+        }
+
+        .el-kolay { stroke: var(--yazi-ikincil); fill: none; stroke-width: 2; }
+        .el-parmak-kolay { fill: #2c313c; stroke: var(--kenarlik); stroke-width: 1.5; transition: all 0.15s; }
 
         .kb-satir { display: flex; gap: 5px; width: 100%; justify-content: center; }
 
@@ -774,9 +820,11 @@
             font-family: 'Consolas', 'Courier New', monospace;
             font-weight: 800;
             font-size: 15px;
-            color: #0f1115;
+            background: var(--panel-acik);
+            color: var(--yazi-ikincil);
+            border: 1px solid var(--kenarlik);
             position: relative;
-            transition: transform 0.08s, box-shadow 0.12s, filter 0.12s;
+            transition: transform 0.08s, box-shadow 0.12s, filter 0.12s, background 0.2s;
         }
 
         /* Ev sırası (asdf jklş) işareti */
@@ -789,12 +837,14 @@
             width: 55%;
             height: 3px;
             border-radius: 2px;
-            background: rgba(15, 17, 21, 0.45);
+            background: rgba(255, 255, 255, 0.3);
         }
 
-        /* Sıradaki tuş: yükselir ve beyaz çerçeve alır */
+        /* Sıradaki tuş: yükselir, beyaz çerçeve + parlak */
         .kb-tus.siradaki {
             transform: translateY(-5px) scale(1.1);
+            background: var(--vurgu-2);
+            color: #0f1115;
             border: 2px solid #fff;
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22), 0 8px 16px rgba(0, 0, 0, 0.5);
             z-index: 2;
@@ -802,6 +852,9 @@
 
         .kb-tus.basildi-dogru { filter: brightness(1.4); transform: scale(0.9); }
         .kb-tus.basildi-yanlis { background: var(--kirmizi) !important; color: #fff; transform: scale(0.9); }
+
+        /* Renkli modda: parmak renkleri geri gelir */
+        body.renkli-mod .kb-tus { color: #0f1115; border-color: transparent; }
 
         .kb-bosluk {
             max-width: 300px;
@@ -945,13 +998,23 @@
                    autocapitalize="off" spellcheck="false">
         </div>
 
-        <!-- ============ SANAL KLAVYE ============ -->
-        <div class="sanal-klavye" id="sanalKlavye">
-            <div class="kb-baslik" style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span>👇 Sıradaki tuş yukarı kalkar — renkler parmakları gösterir</span>
-                <button class="yeniden-btn isi-btn" id="isiBtn">🔥 Isı Haritası</button>
+        <!-- ============ SANAL KLAVYE + YAN ELLER ============ -->
+        <div class="klavye-kapsayici">
+            <div class="klavye-ust">
+                <button class="renk-btn" id="renkBtn" title="Tuşları parmak renklerine / hata ısı haritasına boya">🎨 Renklendir</button>
+                <div class="klavye-notu" id="klavyeNotu">👇 Sıradaki tuş yukarı kalkar</div>
             </div>
-            <!-- Tuşlar JavaScript ile çizilir -->
+            <div class="klavye-govde">
+                <div class="yan-el" id="solElKapsayici">
+                    <!-- Sol el SVG: JavaScript ile çizilir -->
+                </div>
+                <div class="sanal-klavye" id="sanalKlavye">
+                    <!-- Tuşlar JavaScript ile çizilir -->
+                </div>
+                <div class="yan-el" id="sagElKapsayici">
+                    <!-- Sağ el SVG: JavaScript ile çizilir -->
+                </div>
+            </div>
         </div>
 
         <!-- ============ ZAYIF HARFLER ============ -->
@@ -1097,9 +1160,12 @@
 
         const kbTuslar = {};         // harf -> tuş elemanı
 
+        /* Klavye normalde RENKSİZDİR (gri tuşlar). Renklendir
+           butonu 2 durum arasında geçer:
+           1) Parmak renkleri (her parmak kendi renginde)
+           2) Hata ısı haritası (kırmızı=kötü -> yeşil=iyi) */
         function sanalKlavyeCiz() {
             const kapsayici = document.getElementById('sanalKlavye');
-            /* başlık hariç eski içerik temizle */
             kapsayici.querySelectorAll('.kb-satir').forEach(r => r.remove());
 
             KB_SATIRLAR.forEach(function (satir) {
@@ -1109,7 +1175,7 @@
                     const tus = document.createElement('div');
                     tus.className = 'kb-tus' + (t[2] ? ' ev-tusu' : '');
                     tus.textContent = t[0];
-                    tus.style.background = PARMAK_RENKLERI[t[1]];
+                    tus.dataset.parmak = t[1];       /* renk modu için sakla */
                     kbTuslar[t[0]] = tus;
                     sEl.appendChild(tus);
                 });
@@ -1122,24 +1188,29 @@
             const bosluk = document.createElement('div');
             bosluk.className = 'kb-tus kb-bosluk';
             bosluk.textContent = 'BOŞLUK';
-            bosluk.style.background = PARMAK_RENKLERI.TB;
+            bosluk.dataset.parmak = 'TB';
             kbTuslar[' '] = bosluk;
             bs.appendChild(bosluk);
             kapsayici.appendChild(bs);
+
+            klavyeModUygula();
         }
 
-        /* Sıradaki harfe göre klavyede vurgu güncelle */
+        /* Sıradaki harfe göre klavyede vurgu + ELLERİ güncelle */
         function klavyeVurgula(siradaki, sonuc) {
             /* Önceki vurguları temizle */
             Object.values(kbTuslar).forEach(function (t) {
                 t.classList.remove('siradaki', 'basildi-dogru', 'basildi-yanlis');
             });
-            if (siradaki === undefined || siradaki === null) return;
+            if (siradaki === undefined || siradaki === null) { elleriGuncelle(null); return; }
             const t = kbTuslar[siradaki.toLowerCase ? siradaki.toLowerCase() : ' '];
-            if (!t) return;
+            if (!t) { elleriGuncelle(null); return; }
             t.classList.add('siradaki');
             if (sonuc === 'd') t.classList.add('basildi-dogru');
             if (sonuc === 'y') t.classList.add('basildi-yanlis');
+
+            /* Yan ellerde de o parmağı parlat */
+            elleriGuncelle(siradaki);
         }
 
         /* =====================================================
@@ -1804,13 +1875,14 @@
         }
 
         /* =====================================================
-           7d) ISI HARİTASI
+           7d) KLAVYE RENK MODLARI: renksiz -> parmak -> ısı
            -----------------------------------------------------
-           Sanal klavyeyi hata oranına göre renklendirir:
-           yeşil (temiz) -> sarı -> kırmızı (çok hata).
-           Butonla normal parmak-renk görünümüyle geçiş yapılır.
+           Normal: gri tuşlar, sadece sıradaki tuş parlar.
+           "Renklendir" butonu: önce PARMAK renkleri, sonra
+           HATA ISI HARİTASI (kırmızı=en zayıf, turuncu=kötü,
+           yeşil=iyi), sonra tekrar renksiz. Döngüsel.
            ===================================================== */
-        let isiModu = false;
+        let klavyeRenkModu = 0;      // 0=renksiz 1=parmak 2=ısı
 
         /* Bir tuşun hata oranını 0-1 aralığında döndürür */
         function hataOrani(harf) {
@@ -1820,47 +1892,171 @@
             return toplam > 0 ? s.y / toplam : 0;
         }
 
-        /* Isı haritası rengi: yeşil -> sarı -> kırmızı */
+        /* Isı haritası rengi: kırmızı (en kötü) -> turuncu -> yeşil (iyi) */
         function isiRengi(oran) {
-            if (oran <= 0.05) return '#22c55e';       // temiz
-            if (oran <= 0.15) return '#a3e635';       // hafif
-            if (oran <= 0.30) return '#facc15';       // sarı
-            if (oran <= 0.50) return '#fb923c';       // turuncu
-            return '#ef4444';                          // çok hatalı
+            if (oran <= 0.05) return '#22c55e';       // iyi/temiz
+            if (oran <= 0.15) return '#84cc16';       // fena değil
+            if (oran <= 0.30) return '#eab308';       // orta
+            if (oran <= 0.50) return '#f97316';       // kötü
+            return '#ef4444';                          // en zayıf
         }
 
-        function isiHaritasiUygula() {
+        function klavyeModUygula() {
+            document.body.classList.toggle('renkli-mod', klavyeRenkModu === 1);
+
             Object.keys(kbTuslar).forEach(function (h) {
-                if (h === ' ') return;
                 const tus = kbTuslar[h];
-                if (isiModu) {
+
+                if (klavyeRenkModu === 0) {
+                    /* Renksiz: gri */
+                    tus.style.background = '';
+                    tus.style.color = '';
+                    tus.title = '';
+
+                } else if (klavyeRenkModu === 1) {
+                    /* Parmak renkleri */
+                    tus.style.background = PARMAK_RENKLERI[tus.dataset.parmak];
+                    tus.style.color = '#0f1115';
+                    const satir = KB_SATIRLAR.flat().find(t => t[0] === h);
+                    if (satir) {
+                        const elAd = satir[1][0] === 'L' ? 'Sol' : 'Sağ';
+                        const pAd = satir[1][1] === 'T' ? 'Başparmak'
+                            : PARMakLAR_TR[satir[1][0]][parseInt(satir[1][1])];
+                        tus.title = h.toUpperCase() + ' = ' + elAd + ' el, ' + pAd + ' parmağı';
+                    }
+
+                } else {
+                    /* Isı haritası: hata + hız karışımı */
+                    if (h === ' ') { tus.style.background = ''; tus.title = ''; return; }
                     const s = harfIstatistik[h];
-                    const oran = hataOrani(h);
                     const toplam = s ? s.d + s.y : 0;
                     if (toplam >= 3) {
+                        const oran = hataOrani(h);
                         tus.style.background = isiRengi(oran);
+                        tus.style.color = '#fff';
                         tus.title = h.toUpperCase() + ' — hata %' + Math.round(oran * 100) +
                                     ' (' + toplam + ' deneme)';
                     } else {
-                        tus.style.background = '#374151';   // yeterli veri yok
+                        tus.style.background = '#374151';
+                        tus.style.color = '';
                         tus.title = h.toUpperCase() + ' — yeterli veri yok';
                     }
-                } else {
-                    /* normal parmak rengine dön */
-                    const satir = KB_SATIRLAR.flat().find(t => t[0] === h);
-                    if (satir) tus.style.background = PARMAK_RENKLERI[satir[1]];
-                    tus.title = '';
                 }
             });
+
+            /* Buton ve not yazısı */
+            const btn = document.getElementById('renkBtn');
+            const not = document.getElementById('klavyeNotu');
+            if (klavyeRenkModu === 0) {
+                btn.textContent = '🎨 Renklendir';
+                not.innerHTML = '👇 Sıradaki tuş yukarı kalkar';
+            } else if (klavyeRenkModu === 1) {
+                btn.textContent = '🔥 Hata Haritası';
+                not.innerHTML = '🖐️ Her renk bir parmağa ait';
+            } else {
+                btn.textContent = '⚪ Renksiz';
+                not.innerHTML = '🔴 zayıf → 🟠 kötü → 🟡 orta → 🟢 iyi';
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('isiBtn').addEventListener('click', function () {
-                isiModu = !isiModu;
-                this.textContent = isiModu ? '🎨 Parmak Renkleri' : '🔥 Isı Haritası';
-                isiHaritasiUygula();
+        /* =====================================================
+           7e) YAN ELLER (SVG el + parmaklar)
+           -----------------------------------------------------
+           Her el 4 parmak + başparmak çizer. Sıradaki harfin
+           parmağı PARLAR ve yukarı kalkar; üstünde bastığı
+           harfler yazar. Ev sırası her zaman etiketlidir.
+           ===================================================== */
+        const elParlakEl = { L: null, R: null };
+
+        function elCiz(elKodu) {
+            const kapsayici = document.getElementById(elKodu === 'L' ? 'solElKapsayici' : 'sagElKapsayici');
+
+            /* 4 parmak: serçe(0) -> işaret(3). Sol el: serçe solda;
+               sağ el: ayna (işaret solda). */
+            const parmakSirasi = elKodu === 'L' ? [0, 1, 2, 3] : [3, 2, 1, 0];
+            const evHarfleri = elKodu === 'L' ? ['A', 'S', 'D', 'F'] : ['J', 'K', 'L', 'Ş'];
+            const evEsleme = { L: { 0: 'A', 1: 'S', 2: 'D', 3: 'F' }, R: { 3: 'J', 2: 'K', 1: 'L', 0: 'Ş' } };
+
+            let svg = '<svg viewBox="0 0 90 130" xmlns="http://www.w3.org/2000/svg">';
+            svg += '<defs><style>.ptxt{font:700 9px Segoe UI;fill:#0f1115;text-anchor:middle}.etxt{font:600 7px Segoe UI;fill:#8b93a7;text-anchor:middle}</style></defs>';
+
+            /* Avuç */
+            const avucX = elKodu === 'L' ? 38 : 52;
+            svg += '<path d="M ' + (avucX - 24) + ' 60 Q ' + (avucX - 26) + ' 40 ' + (avucX - 20) + ' 28 L ' + (avucX + 22) + ' 28 Q ' + (avucX + 27) + ' 42 ' + (avucX + 24) + ' 60 L ' + (avucX + 20) + ' 118 Q ' + avucX + ' 126 ' + (avucX - 20) + ' 118 Z" fill="#1e222b" stroke="#2c313c" stroke-width="1.5"/>';
+
+            /* Parmaklar: serçe kısa -> işaret uzun */
+            const yukseklikler = [44, 52, 58, 62];
+            parmakSirasi.forEach(function (pNo, gorev) {
+                const x = 10 + gorev * 21;
+                const h = yukseklikler[pNo];
+                const kod = elKodu + pNo;
+                const evHarf = evEsleme[elKodu][pNo];
+                svg += '<g id="parmak-' + kod + '" class="el-parmak-grubu">' +
+                       '<rect x="' + (x - 8) + '" y="' + (60 - h) + '" width="16" height="' + (h + 8) + '" rx="7" ' +
+                       'class="el-parmak" data-kod="' + kod + '" fill="#2c313c" stroke="#3a4150" stroke-width="1.5"/>' +
+                       '<text x="' + x + '" y="' + (60 - h + 18) + '" class="ptxt el-ev-harf" id="evh-' + kod + '">' + evHarf + '</text>' +
+                       '</g>';
             });
-        });
+
+            /* Başparmak: sol elde sola, sağ elde sağa */
+            const bpX = elKodu === 'L' ? 8 : 82;
+            const bpDonus = elKodu === 'L' ? 'rotate(35 ' + bpX + ' 78)' : 'rotate(-35 ' + bpX + ' 78)';
+            svg += '<g transform="' + bpDonus + '">' +
+                   '<rect x="' + (bpX - 7) + '" y="62" width="14" height="40" rx="7" class="el-parmak" data-kod="TB" fill="#2c313c" stroke="#3a4150" stroke-width="1.5"/>' +
+                   '<text x="' + bpX + '" y="92" class="ptxt el-ev-harf" font-size="7">␣</text>' +
+                   '</g>';
+
+            svg += '</svg>';
+
+            kapsayici.innerHTML =
+                svg +
+                '<div class="yan-el-aciklama">' +
+                (elKodu === 'L' ? 'SOL EL<br>ASDF + G' : 'SAĞ EL<br>J K L Ş + H') +
+                '</div>';
+        }
+
+        /* Elin parmaklarını sıradaki harfe göre vurgula.
+           yeniHarf: sıradaki harf (harf->el+parmak çözülür) */
+        function elleriGuncelle(siradakiHarf) {
+            /* Tüm parmakları sıfırla (ev sırası etiketleri geri) */
+            document.querySelectorAll('.el-parmak').forEach(function (pr) {
+                pr.style.fill = '#2c313c';
+                pr.style.stroke = '#3a4150';
+                pr.style.transform = '';
+                pr.style.filter = '';
+            });
+            document.querySelectorAll('.el-ev-harf').forEach(function (t) {
+                t.textContent = t.dataset.ev || t.textContent;
+                t.style.fill = '#0f1115';
+            });
+            if (!siradakiHarf) return;
+
+            /* Harfin elini ve parmağını bul */
+            const harfKucuk = typeof siradakiHarf === 'string' ? siradakiHarf.toLowerCase() : siradakiHarf;
+            let kod = null;
+            if (harfKucuk === ' ') kod = 'TB';
+            else {
+                const satir = KB_SATIRLAR.flat().find(t => t[0] === harfKucuk);
+                if (satir) kod = satir[1];
+            }
+            if (!kod) return;
+
+            /* Hedef parmağı parlat */
+            const hedef = document.querySelector('.el-parmak[data-kod="' + kod + '"]');
+            if (hedef) {
+                hedef.style.fill = PARMAK_RENKLERI[kod];
+                hedef.style.stroke = '#fff';
+                hedef.style.filter = 'brightness(1.25)';
+                hedef.style.transform = 'translateY(-4px)';
+            }
+        }
+
+        /* Ev sırası etiketlerini data'ya kaydet (reset için) */
+        function elEtiketleriniSabitle() {
+            document.querySelectorAll('.el-ev-harf').forEach(function (t) {
+                t.dataset.ev = t.textContent;
+            });
+        }
 
         /* =====================================================
            7e) DERS MODU MOTORU
@@ -2302,6 +2498,13 @@
             if (kayitli >= 1 && kayitli <= 10) durum.seviye = kayitli;
             sesBtnGuncelle();
             sanalKlavyeCiz();
+            elCiz('L');
+            elCiz('R');
+            elEtiketleriniSabitle();
+            document.getElementById('renkBtn').addEventListener('click', function () {
+                klavyeRenkModu = (klavyeRenkModu + 1) % 3;
+                klavyeModUygula();
+            });
             harfIstatistikYukle();
             gunlukYukle();
             dersIlerlemeYukle();
