@@ -866,72 +866,103 @@
            harfin parmağı parmak rengine boyanır ve aşağı iner.
            ===================================================== */
 
-        /* Parmak tanımı: uzunluk, x-konumu, eğim açısı, genişlik */
+        /* Parmak tanımı: uzunluk, x-konumu, eğim açısı, taban genişliği */
         const PARM_TANIM = {
-            L0: { uz: 60, x: 26,  aci: 15, w: 27 },   // serçe
-            L1: { uz: 76, x: 58,  aci: 7,  w: 29 },   // yüzük
-            L2: { uz: 84, x: 91,  aci: 0,  w: 30 },   // orta
-            L3: { uz: 80, x: 124, aci: -6, w: 29 }    // işaret
+            L0: { uz: 58, x: 27,  aci: 14, w: 26 },   // serçe
+            L1: { uz: 74, x: 59,  aci: 6,  w: 28 },   // yüzük
+            L2: { uz: 82, x: 92,  aci: 0,  w: 29 },   // orta
+            L3: { uz: 78, x: 125, aci: -5, w: 28 }    // işaret
         };
 
         const EL_EV_HARF = { L: ['A', 'S', 'D', 'F'], R: ['Ş', 'L', 'K', 'J'] };
 
-        /* Bir elin SVG'sini üretir. elKodu: 'L' | 'R' */
+        /* Bir elin SVG'sini üretir. elKodu: 'L' | 'R'
+           viewBox: 200 x 260 -> ele bolca nefes payı (kenarlardan 15px boşluk) */
         function elCiz(elKodu) {
             const kapsayici = document.getElementById(elKodu === 'L' ? 'solElKapsayici' : 'sagElKapsayici');
             const sagMi = elKodu === 'R';
 
-            /* Avuç (el içi) path'i */
-            const avuc = sagMi
-                ? 'M 16 96 C 12 78 22 62 42 60 L 126 62 C 146 64 156 78 152 98 ' +
-                  'L 148 158 C 146 178 132 196 106 200 L 60 200 C 34 198 20 180 18 158 Z'
-                : 'M 18 96 C 14 78 24 62 44 60 L 128 62 C 148 64 158 78 154 98 ' +
-                  'L 150 158 C 148 178 134 196 108 200 L 62 200 C 36 198 22 180 20 158 Z';
+            /* Parmaklar 170 genişliğinde çizilir, viewBox 200: +15 sol/sağ boşluk.
+               Yatay merkezleme için tüm çizimleri 15px kaydır. */
+            const K = 15;
 
-            let svg = '<svg viewBox="0 0 170 232" xmlns="http://www.w3.org/2000/svg">';
+            /* Avuç (el içi): organik, bileğe doğru daralan form */
+            const avuc = sagMi
+                ? 'M 31 100 C 26 80 38 64 58 61 L 141 63 C 161 66 171 80 167 100 ' +
+                  'L 162 162 C 160 183 146 200 119 204 L 74 204 C 48 202 33 184 33 162 Z'
+                : 'M 33 100 C 28 80 40 64 60 61 L 143 63 C 163 66 173 80 169 100 ' +
+                  'L 164 162 C 162 183 148 200 121 204 L 76 204 C 50 202 35 184 35 162 Z';
+
+            let svg = '<svg viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">';
             svg += '<defs><style>' +
                    '.pk{stroke:#0f1115;stroke-width:2.6;fill:#E8B48C;stroke-linejoin:round}' +
                    '.bog{stroke:rgba(15,17,21,0.30);stroke-width:1.8;fill:none;stroke-linecap:round}' +
                    '.avc{stroke:rgba(15,17,21,0.22);stroke-width:2;fill:none;stroke-linecap:round}' +
                    '.trn{fill:#F6E3D0;stroke:#0f1115;stroke-width:1.6}' +
                    '.hrf{font:800 14px Segoe UI;fill:#0f1115;text-anchor:middle}' +
+                   '.gdg{fill:rgba(15,17,21,0.10)}' +
                    '</style></defs>';
 
-            /* Parmaklar */
+            /* Parmaklar: uçları incelen (gerçek parmak formu).
+               path: tabandan uca doğru daralan kapsül. */
             [0, 1, 2, 3].forEach(function (pNo) {
                 const t = PARM_TANIM['L' + pNo];
-                const x = sagMi ? 170 - t.x : t.x;
+                const x = (sagMi ? 170 - t.x : t.x) + K;
                 const aci = sagMi ? -t.aci : t.aci;
                 const kod = elKodu + pNo;
-                const kokY = 76;
+                const kokY = 80;                      /* avuç üst kenarı */
+                const ucW = t.w * 0.78;               /* uç %22 daha ince */
+                const ust = kokY - t.uz;
+                const tabanY = kokY + 40;
+
+                /* Kapsül path: üst yarı-yuvarlak + daralan gövde */
+                const px1 = x - t.w / 2, px2 = x + t.w / 2;
+                const ux1 = x - ucW / 2, ux2 = x + ucW / 2;
+                const path = 'M ' + px1 + ' ' + tabanY +
+                             ' L ' + px1 + ' ' + (ust + 18) +
+                             ' C ' + px1 + ' ' + ust + ' ' + ux1 + ' ' + ust + ' ' + x + ' ' + ust +
+                             ' C ' + ux2 + ' ' + ust + ' ' + px2 + ' ' + ust + ' ' + px2 + ' ' + (ust + 18) +
+                             ' L ' + px2 + ' ' + tabanY;
 
                 svg += '<g transform="rotate(' + aci + ' ' + x + ' ' + kokY + ')">' +
-                       '<rect class="el-parmak pk" data-kod="' + kod + '" x="' + (x - t.w / 2) + '" y="' + (kokY - t.uz) + '" width="' + t.w + '" height="' + (t.uz + 50) + '" rx="' + (t.w / 2) + '"/>' +
-                       /* boğum çizgileri */
-                       '<path class="bog" d="M ' + (x - t.w / 2 + 4) + ' ' + (kokY - t.uz * 0.40) + ' Q ' + x + ' ' + (kokY - t.uz * 0.40 + 5) + ' ' + (x + t.w / 2 - 4) + ' ' + (kokY - t.uz * 0.40) + '"/>' +
-                       '<path class="bog" d="M ' + (x - t.w / 2 + 4) + ' ' + (kokY - t.uz * 0.10) + ' Q ' + x + ' ' + (kokY - t.uz * 0.10 + 5) + ' ' + (x + t.w / 2 - 4) + ' ' + (kokY - t.uz * 0.10) + '"/>' +
-                       /* tırnak */
-                       '<rect class="trn" x="' + (x - t.w / 2 + 4) + '" y="' + (kokY - t.uz + 5) + '" width="' + (t.w - 8) + '" height="' + Math.round(t.w * 0.62) + '" rx="5"/>' +
+                       '<path class="el-parmak pk" data-kod="' + kod + '" d="' + path + ' Z"/>' +
+                       /* boğum çizgileri (hafif kavis) */
+                       '<path class="bog" d="M ' + (px1 + 4) + ' ' + (ust + t.uz * 0.55) + ' Q ' + x + ' ' + (ust + t.uz * 0.55 + 5) + ' ' + (px2 - 4) + ' ' + (ust + t.uz * 0.55) + '"/>' +
+                       '<path class="bog" d="M ' + (px1 + 4) + ' ' + (ust + t.uz * 0.22) + ' Q ' + x + ' ' + (ust + t.uz * 0.22 + 5) + ' ' + (px2 - 4) + ' ' + (ust + t.uz * 0.22) + '"/>' +
+                       /* tırnak: uçta, hafif oval */
+                       '<rect class="trn" x="' + (x - ucW / 2 + 3) + '" y="' + (ust + 5) + '" width="' + (ucW - 6) + '" height="' + Math.round(t.w * 0.58) + '" rx="6"/>' +
                        /* ev sırası harfi */
-                       '<text class="hrf el-ev-harf" data-kod="' + kod + '" x="' + x + '" y="' + (kokY - t.uz + t.w + 16) + '">' + EL_EV_HARF[elKodu][pNo] + '</text>' +
+                       '<text class="hrf el-ev-harf" data-kod="' + kod + '" x="' + x + '" y="' + (ust + t.w + 15) + '">' + EL_EV_HARF[elKodu][pNo] + '</text>' +
                        '</g>';
             });
 
-            /* Başparmak */
-            const bpX = sagMi ? 152 : 18;
-            const bpRot = sagMi ? -48 : 48;
-            svg += '<g transform="rotate(' + bpRot + ' ' + bpX + ' 130)">' +
-                   '<rect class="el-parmak pk" data-kod="' + elKodu + 'TB" x="' + (bpX - 14) + '" y="70" width="28" height="90" rx="14"/>' +
-                   '<rect class="trn" x="' + (bpX - 9) + '" y="76" width="18" height="14" rx="4"/>' +
-                   '<text class="hrf el-ev-harf" data-kod="' + elKodu + 'TB" x="' + bpX + '" y="132">␣</text>' +
+            /* Başparmak: kenarda, iki boğumlu, uç incelen */
+            const bpX = (sagMi ? 152 : 18) + K;
+            const bpRot = sagMi ? -46 : 46;
+            svg += '<g transform="rotate(' + bpRot + ' ' + bpX + ' 134)">' +
+                   '<path class="el-parmak pk" data-kod="' + elKodu + 'TB" d="M ' + (bpX - 14) + ' 122 L ' + (bpX - 14) + ' 78 C ' + (bpX - 14) + ' 68 ' + (bpX - 9) + ' 64 ' + bpX + ' 64 C ' + (bpX + 9) + ' 64 ' + (bpX + 14) + ' 68 ' + (bpX + 14) + ' 78 L ' + (bpX + 14) + ' 122 Z"/>' +
+                   '<rect class="trn" x="' + (bpX - 8) + '" y="70" width="16" height="13" rx="5"/>' +
+                   '<text class="hrf el-ev-harf" data-kod="' + elKodu + 'TB" x="' + bpX + '" y="118">␣</text>' +
                    '</g>';
 
-            /* Avuç parmakların altını örter */
+            /* Avuç parmakların altını organik biçimde örter */
             svg += '<path d="' + avuc + '" fill="#E8B48C" stroke="#0f1115" stroke-width="2.8" stroke-linejoin="round"/>';
 
-            /* Avuç çizgileri */
-            svg += '<path class="avc" d="M 52 108 C 74 122 100 128 122 126"/>';
-            svg += '<path class="avc" d="M 48 116 C 58 148 76 172 100 184"/>';
+            /* Bilek: avucun altından devam */
+            const bilek = sagMi
+                ? 'M 62 198 C 70 214 78 228 84 244 L 130 244 C 128 226 132 210 140 200'
+                : 'M 60 198 C 68 214 76 228 82 244 L 128 244 C 126 226 130 210 138 200';
+            svg += '<path d="' + bilek + ' L 162 196 L 58 196 Z" fill="#E8B48C" stroke="#0f1115" stroke-width="2.6" stroke-linejoin="round"/>';
+
+            /* Avuç çizgileri: kalp hattı + hayat hattı + parmak kökleri */
+            svg += '<path class="avc" d="M 68 112 C 90 126 116 130 138 128"/>';
+            svg += '<path class="avc" d="M 64 120 C 74 152 92 176 116 188"/>';
+            svg += '<path class="avc" d="M 100 112 C 104 126 106 142 106 160"/>';
+
+            /* Parmak kökü gölgeleri (derinlik hissi) */
+            svg += '<ellipse class="gdg" cx="62" cy="84" rx="10" ry="5"/>' +
+                   '<ellipse class="gdg" cx="94" cy="82" rx="10" ry="5"/>' +
+                   '<ellipse class="gdg" cx="127" cy="83" rx="10" ry="5"/>';
 
             svg += '</svg>';
 
