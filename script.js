@@ -939,9 +939,9 @@
             const kapsayici = document.getElementById(kapsayiciId);
 
             const sahne = new THREE.Scene();
-            const kamera = new THREE.PerspectiveCamera(24, 0.66, 0.1, 30);
-            kamera.position.set(0, 1.3, 7.0);
-            kamera.lookAt(0, 0.55, 0);
+            const kamera = new THREE.PerspectiveCamera(26, 0.66, 0.1, 30);
+            kamera.position.set(0, 1.5, 6.2);
+            kamera.lookAt(0, 0.35, 0);
 
             const cizici = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             cizici.setPixelRatio(window.devicePixelRatio);
@@ -973,9 +973,12 @@
 
             const elGrup = new THREE.Group();
             if (elKodu === 'R') elGrup.scale.x = -1;
-            /* AVUÇ İÇİ kameraya tam bakar */
-            elGrup.rotation.x = 1.35;
-            elGrup.rotation.y = -0.04;
+            /* EL 90 DERECE ÇEVRİLMİŞ: avuç yana bakar, parmaklar
+               yukarı-yana uzanır; hafif yatışla doğal duruş.
+               Boyut %22 küçültüldü — kutucuğa rahat sığar. */
+            elGrup.scale.multiplyScalar(0.78);
+            elGrup.rotation.set(1.5708, 0.18, 0.35);
+            elGrup.position.set(0, -0.35, 0);
             sahne.add(elGrup);
 
             /* --- AVUÇ: gerçek avuç formu (Lathe ile organik) --- */
@@ -1014,13 +1017,15 @@
 
                 const pr = parmakUret(tutucu, t, ten, tirnakM);
 
-                /* Parmak doğal yayı: kökten hafif dışa/öne eğim;
-                   uç boğum az daha kıvrık (gerçek el dinlenme pozu) */
+                /* Parmak doğal yayı + HAFİF KIRIK dinlenme pozu:
+                   parmaklar düz değil, gerçekte olduğu gibi hafif
+                   kıvrık durur (klavyeye hazır poz) */
                 pr.kok.rotation.z = -t.yay * 0.5;
+                pr.kok.rotation.x = 0.22;                 /* kökten hafif öne */
                 pr.menteseler[1].rotation.z = -t.yay * 0.35;
                 pr.menteseler[2].rotation.z = -t.yay * 0.2;
-                pr.menteseler[1].rotation.x = 0.10;   /* orta boğum hafif içe */
-                pr.menteseler[2].rotation.x = 0.16;   /* uç boğum daha kıvrık */
+                pr.menteseler[1].rotation.x = 0.30;        /* orta boğum belirgin kırık */
+                pr.menteseler[2].rotation.x = 0.42;        /* uç boğum daha da kırık */
 
                 parmakObjeleri[kod] = {
                     kok: pr.kok, segler: pr.segler, menteseler: pr.menteseler,
@@ -1060,13 +1065,13 @@
                     if (pr.basparmak) {
                         /* Başparmak: avuca doğru kapanır */
                         pr.kok.rotation.y = 0.75 - pr.egim * 0.45;
-                        pr.menteseler[1].rotation.x = 0.10 + pr.egim * 0.35;
+                        pr.menteseler[1].rotation.x = 0.12 + pr.egim * 0.35;
                     } else {
-                        /* Parmak: 3 boğum kademeli katlanır
-                           (gerçek tutma hareketi: kök az, uç çok) */
-                        pr.kok.rotation.x = pr.egim * 0.35;
-                        pr.menteseler[1].rotation.x = 0.10 + pr.egim * 0.55;
-                        pr.menteseler[2].rotation.x = 0.16 + pr.egim * 0.75;
+                        /* Parmak: kırık dinlenme pozundan basma hareketine
+                           kademeli geçiş (kök az, uç boğum çok katlanır) */
+                        pr.kok.rotation.x = 0.22 + pr.egim * 0.30;
+                        pr.menteseler[1].rotation.x = 0.30 + pr.egim * 0.50;
+                        pr.menteseler[2].rotation.x = 0.42 + pr.egim * 0.65;
                     }
                 });
 
