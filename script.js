@@ -859,126 +859,208 @@
         }
 
         /* =====================================================
-           7e) YAN ELLER — 2B NET EL ÇİZİMİ (el içi görünüm)
+        /* =====================================================
+           7e) YAN ELLER — THREE.JS 3D ELLER
            -----------------------------------------------------
-           Kalın konturlu parmaklar, boğum çizgileri, tırnaklar,
-           avuç çizgileri: her parmak NET seçilir. Sıradaki
-           harfin parmağı parmak rengine boyanır ve aşağı iner.
+           Gerçekçi 3B eller: tam sığan uzun parmaklar, belirgin
+           başparmak ve serçe, boğumlu kapsül parmaklar, yumuşak
+           ışık. Sıradaki harfin parmağı renklenir ve basar.
            ===================================================== */
+        let three3D = { yuklu: false };
 
-        /* Parmak tanımı: uzunluk, x-konumu, eğim açısı, taban genişliği */
-        const PARM_TANIM = {
-            L0: { uz: 58, x: 27,  aci: 14, w: 26 },   // serçe
-            L1: { uz: 74, x: 59,  aci: 6,  w: 28 },   // yüzük
-            L2: { uz: 82, x: 92,  aci: 0,  w: 29 },   // orta
-            L3: { uz: 78, x: 125, aci: -5, w: 28 }    // işaret
+        /* Parmak: uzunluk, x-ofset, eğim, kalınlık.
+           Serçe kısa+ince (belirgin), başparmak ayrı çizilir. */
+        const PARM3D = {
+            L0: { uz: 1.00, x: -0.86, aci: 0.26, k: 0.150 },   // serçe: kısa, ince
+            L1: { uz: 1.22, x: -0.30, aci: 0.10, k: 0.170 },   // yüzük
+            L2: { uz: 1.34, x:  0.20, aci: 0.00, k: 0.178 },   // orta: en uzun
+            L3: { uz: 1.28, x:  0.68, aci: -0.10, k: 0.174 }   // işaret
         };
 
-        const EL_EV_HARF = { L: ['A', 'S', 'D', 'F'], R: ['Ş', 'L', 'K', 'J'] };
+        const EL_EV_HARF3D = { L: ['A', 'S', 'D', 'F'], R: ['Ş', 'L', 'K', 'J'] };
 
-        /* Bir elin SVG'sini üretir. elKodu: 'L' | 'R'
-           viewBox: 200 x 260 -> ele bolca nefes payı (kenarlardan 15px boşluk) */
-        function elCiz(elKodu) {
-            const kapsayici = document.getElementById(elKodu === 'L' ? 'solElKapsayici' : 'sagElKapsayici');
-            const sagMi = elKodu === 'R';
+        /* Bir el sahnesi kurar */
+        function elSahnesiKur(elKodu, kapsayiciId) {
+            const kapsayici = document.getElementById(kapsayiciId);
 
-            /* Parmaklar 170 genişliğinde çizilir, viewBox 200: +15 sol/sağ boşluk.
-               Yatay merkezleme için tüm çizimleri 15px kaydır. */
-            const K = 15;
+            const sahne = new THREE.Scene();
+            const kamera = new THREE.PerspectiveCamera(30, 0.62, 0.1, 30);
+            /* Kamera: avucu tam çerçeveler, parmaklar TAM SIĞAR */
+            kamera.position.set(0, 1.05, 5.6);
+            kamera.lookAt(0, 0.45, 0);
 
-            /* Avuç (el içi): organik, bileğe doğru daralan form */
-            const avuc = sagMi
-                ? 'M 31 100 C 26 80 38 64 58 61 L 141 63 C 161 66 171 80 167 100 ' +
-                  'L 162 162 C 160 183 146 200 119 204 L 74 204 C 48 202 33 184 33 162 Z'
-                : 'M 33 100 C 28 80 40 64 60 61 L 143 63 C 163 66 173 80 169 100 ' +
-                  'L 164 162 C 162 183 148 200 121 204 L 76 204 C 50 202 35 184 35 162 Z';
+            const cizici = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            cizici.setPixelRatio(window.devicePixelRatio);
+            const boyut = function () {
+                const w = kapsayici.clientWidth || 170;
+                const h = Math.round(w * 1.55);
+                cizici.setSize(w, h);
+                kamera.aspect = w / h;
+                kamera.updateProjectionMatrix();
+                return h;
+            };
+            boyut();
+            kapsayici.insertBefore(cizici.domElement, kapsayici.firstChild);
 
-            let svg = '<svg viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">';
-            svg += '<defs><style>' +
-                   '.pk{stroke:#0f1115;stroke-width:2.6;fill:#E8B48C;stroke-linejoin:round}' +
-                   '.bog{stroke:rgba(15,17,21,0.30);stroke-width:1.8;fill:none;stroke-linecap:round}' +
-                   '.avc{stroke:rgba(15,17,21,0.22);stroke-width:2;fill:none;stroke-linecap:round}' +
-                   '.trn{fill:#F6E3D0;stroke:#0f1115;stroke-width:1.6}' +
-                   '.hrf{font:800 14px Segoe UI;fill:#0f1115;text-anchor:middle}' +
-                   '.gdg{fill:rgba(15,17,21,0.10)}' +
-                   '</style></defs>';
+            /* Işıklar */
+            sahne.add(new THREE.AmbientLight(0xffffff, 0.62));
+            const isik1 = new THREE.DirectionalLight(0xfff0dd, 1.15);
+            isik1.position.set(2.5, 3.5, 4.5);
+            sahne.add(isik1);
+            const isik2 = new THREE.DirectionalLight(0xa8c4ff, 0.4);
+            isik2.position.set(-3, 1.5, 2.5);
+            sahne.add(isik2);
 
-            /* Parmaklar: uçları incelen (gerçek parmak formu).
-               path: tabandan uca doğru daralan kapsül. */
+            /* Malzemeler */
+            const ten = new THREE.MeshStandardMaterial({ color: 0xE8B48C, roughness: 0.55, metalness: 0.03 });
+            const tirnakM = new THREE.MeshStandardMaterial({ color: 0xF6E3D0, roughness: 0.3 });
+
+            const elGrup = new THREE.Group();
+            if (elKodu === 'R') elGrup.scale.x = -1;
+            /* Hafif el içi görünümü: kameraya dön */
+            elGrup.rotation.x = 0.5;
+            sahne.add(elGrup);
+
+            /* Avuç: yassı yuvarlak kutu (RoundedBox benzeri: küre+ölçek) */
+            const avuc = new THREE.Mesh(new THREE.SphereGeometry(1.05, 30, 24), ten);
+            avuc.scale.set(1.12, 0.72, 1.05);
+            avuc.position.y = 0.1;
+            elGrup.add(avuc);
+
+            /* Bilek: silindir, avuçtan aşağı */
+            const bilek = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.68, 1.5, 22), ten);
+            bilek.position.y = -0.95;
+            elGrup.add(bilek);
+
+            const parmakObjeleri = {};
+
+            /* 4 parmak: 3 boğumlu — kök, orta, uç (uç en ince) */
             [0, 1, 2, 3].forEach(function (pNo) {
-                const t = PARM_TANIM['L' + pNo];
-                const x = (sagMi ? 170 - t.x : t.x) + K;
-                const aci = sagMi ? -t.aci : t.aci;
+                const t = PARM3D['L' + pNo];
                 const kod = elKodu + pNo;
-                const kokY = 80;                      /* avuç üst kenarı */
-                const ucW = t.w * 0.78;               /* uç %22 daha ince */
-                const ust = kokY - t.uz;
-                const tabanY = kokY + 40;
 
-                /* Kapsül path: üst yarı-yuvarlak + daralan gövde */
-                const px1 = x - t.w / 2, px2 = x + t.w / 2;
-                const ux1 = x - ucW / 2, ux2 = x + ucW / 2;
-                const path = 'M ' + px1 + ' ' + tabanY +
-                             ' L ' + px1 + ' ' + (ust + 18) +
-                             ' C ' + px1 + ' ' + ust + ' ' + ux1 + ' ' + ust + ' ' + x + ' ' + ust +
-                             ' C ' + ux2 + ' ' + ust + ' ' + px2 + ' ' + ust + ' ' + px2 + ' ' + (ust + 18) +
-                             ' L ' + px2 + ' ' + tabanY;
+                const kok = new THREE.Group();
+                kok.position.set(t.x, 0.72, 0.12);
+                kok.rotation.z = t.aci;
+                elGrup.add(kok);
 
-                svg += '<g transform="rotate(' + aci + ' ' + x + ' ' + kokY + ')">' +
-                       '<path class="el-parmak pk" data-kod="' + kod + '" d="' + path + ' Z"/>' +
-                       /* boğum çizgileri (hafif kavis) */
-                       '<path class="bog" d="M ' + (px1 + 4) + ' ' + (ust + t.uz * 0.55) + ' Q ' + x + ' ' + (ust + t.uz * 0.55 + 5) + ' ' + (px2 - 4) + ' ' + (ust + t.uz * 0.55) + '"/>' +
-                       '<path class="bog" d="M ' + (px1 + 4) + ' ' + (ust + t.uz * 0.22) + ' Q ' + x + ' ' + (ust + t.uz * 0.22 + 5) + ' ' + (px2 - 4) + ' ' + (ust + t.uz * 0.22) + '"/>' +
-                       /* tırnak: uçta, hafif oval */
-                       '<rect class="trn" x="' + (x - ucW / 2 + 3) + '" y="' + (ust + 5) + '" width="' + (ucW - 6) + '" height="' + Math.round(t.w * 0.58) + '" rx="6"/>' +
-                       /* ev sırası harfi */
-                       '<text class="hrf el-ev-harf" data-kod="' + kod + '" x="' + x + '" y="' + (ust + t.w + 15) + '">' + EL_EV_HARF[elKodu][pNo] + '</text>' +
-                       '</g>';
+                /* Boğum küreleri (eklem) + kapsül segmentler */
+                const segUz = [t.uz * 0.42, t.uz * 0.34, t.uz * 0.24];   // kök->uç
+                const kalinlik = [t.k, t.k * 0.9, t.k * 0.78];
+
+                let yToplam = 0;
+                const eklemler = [];
+                for (let s = 0; s < 3; s++) {
+                    const seg = new THREE.Mesh(
+                        new THREE.CapsuleGeometry(kalinlik[s], segUz[s], 6, 14), ten);
+                    seg.position.y = yToplam + segUz[s] / 2 + kalinlik[s] * 0.3;
+                    kok.add(seg);
+                    yToplam = seg.position.y + segUz[s] / 2 + kalinlik[s] * 0.25;
+
+                    /* eklem küresi */
+                    const eklem = new THREE.Mesh(new THREE.SphereGeometry(kalinlik[s] * 0.98, 12, 10), ten);
+                    eklem.position.y = yToplam;
+                    kok.add(eklem);
+                    eklemler.push(eklem);
+                }
+
+                /* Tırnak: uçta hafif eğik */
+                const tirnak = new THREE.Mesh(
+                    new THREE.BoxGeometry(kalinlik[2] * 1.5, kalinlik[2] * 0.5, kalinlik[2] * 2.0), tirnakM);
+                tirnak.position.set(0, yToplam + kalinlik[2] * 0.4, kalinlik[2] * 0.7);
+                tirnak.rotation.x = -0.35;
+                kok.add(tirnak);
+
+                parmakObjeleri[kod] = {
+                    kok: kok, segler: kok.children.filter(c => c.geometry && c.geometry.type === 'CapsuleGeometry'),
+                    eklemler: eklemler, tirnak: tirnak,
+                    egim: 0, hedef: 0, malzeme: ten
+                };
             });
 
-            /* Başparmak: kenarda, iki boğumlu, uç incelen */
-            const bpX = (sagMi ? 152 : 18) + K;
-            const bpRot = sagMi ? -46 : 46;
-            svg += '<g transform="rotate(' + bpRot + ' ' + bpX + ' 134)">' +
-                   '<path class="el-parmak pk" data-kod="' + elKodu + 'TB" d="M ' + (bpX - 14) + ' 122 L ' + (bpX - 14) + ' 78 C ' + (bpX - 14) + ' 68 ' + (bpX - 9) + ' 64 ' + bpX + ' 64 C ' + (bpX + 9) + ' 64 ' + (bpX + 14) + ' 68 ' + (bpX + 14) + ' 78 L ' + (bpX + 14) + ' 122 Z"/>' +
-                   '<rect class="trn" x="' + (bpX - 8) + '" y="70" width="16" height="13" rx="5"/>' +
-                   '<text class="hrf el-ev-harf" data-kod="' + elKodu + 'TB" x="' + bpX + '" y="118">␣</text>' +
-                   '</g>';
+            /* BAŞPARMAK: belirgin — kıvrık, kalın, avucun yanında */
+            const bp = new THREE.Group();
+            bp.position.set(-0.95, 0.15, 0.35);
+            bp.rotation.z = 1.05;          /* dışa doğru yatık */
+            bp.rotation.y = 0.4;           /* hafif öne dönük */
+            elGrup.add(bp);
 
-            /* Avuç parmakların altını organik biçimde örter */
-            svg += '<path d="' + avuc + '" fill="#E8B48C" stroke="#0f1115" stroke-width="2.8" stroke-linejoin="round"/>';
+            const bpKalin = 0.185;
+            const bp1 = new THREE.Mesh(new THREE.CapsuleGeometry(bpKalin, 0.5, 6, 14), ten);
+            bp1.position.y = 0.32;
+            bp.add(bp1);
+            const bpEklem = new THREE.Mesh(new THREE.SphereGeometry(bpKalin * 0.98, 12, 10), ten);
+            bpEklem.position.y = 0.66;
+            bp.add(bpEklem);
+            const bp2 = new THREE.Mesh(new THREE.CapsuleGeometry(bpKalin * 0.82, 0.36, 6, 14), ten);
+            bp2.position.y = 0.94;
+            bp.add(bp2);
+            const bpUc = new THREE.Mesh(new THREE.SphereGeometry(bpKalin * 0.8, 12, 10), ten);
+            bpUc.position.y = 1.18;
+            bp.add(bpUc);
+            const bpTirnak = new THREE.Mesh(
+                new THREE.BoxGeometry(bpKalin * 1.4, bpKalin * 0.5, bpKalin * 1.8), tirnakM);
+            bpTirnak.position.set(0, 1.14, bpKalin * 0.65);
+            bpTirnak.rotation.x = -0.35;
+            bp.add(bpTirnak);
 
-            /* Bilek: avucun altından devam */
-            const bilek = sagMi
-                ? 'M 62 198 C 70 214 78 228 84 244 L 130 244 C 128 226 132 210 140 200'
-                : 'M 60 198 C 68 214 76 228 82 244 L 128 244 C 126 226 130 210 138 200';
-            svg += '<path d="' + bilek + ' L 162 196 L 58 196 Z" fill="#E8B48C" stroke="#0f1115" stroke-width="2.6" stroke-linejoin="round"/>';
+            parmakObjeleri[elKodu + 'TB'] = {
+                kok: bp, segler: [bp1, bp2], eklemler: [bpEklem, bpUc], tirnak: bpTirnak,
+                egim: 0, hedef: 0, malzeme: ten
+            };
 
-            /* Avuç çizgileri: kalp hattı + hayat hattı + parmak kökleri */
-            svg += '<path class="avc" d="M 68 112 C 90 126 116 130 138 128"/>';
-            svg += '<path class="avc" d="M 64 120 C 74 152 92 176 116 188"/>';
-            svg += '<path class="avc" d="M 100 112 C 104 126 106 142 106 160"/>';
+            /* Animasyon döngüsü */
+            let zaman = 0;
+            function animate() {
+                requestAnimationFrame(animate);
+                zaman += 0.016;
 
-            /* Parmak kökü gölgeleri (derinlik hissi) */
-            svg += '<ellipse class="gdg" cx="62" cy="84" rx="10" ry="5"/>' +
-                   '<ellipse class="gdg" cx="94" cy="82" rx="10" ry="5"/>' +
-                   '<ellipse class="gdg" cx="127" cy="83" rx="10" ry="5"/>';
+                Object.keys(parmakObjeleri).forEach(function (kod) {
+                    const pr = parmakObjeleri[kod];
+                    pr.egim += (pr.hedef - pr.egim) * 0.16;
 
-            svg += '</svg>';
+                    if (kod.endsWith('TB')) {
+                        /* başparmak: içe doğru kapanır */
+                        pr.kok.rotation.y = 0.4 - pr.egim * 0.55;
+                    } else {
+                        /* parmak: kökten öne katlanır */
+                        pr.kok.rotation.x = pr.egim * 0.5;
+                        pr.segler.forEach(function (seg, i) {
+                            seg.rotation.x = pr.egim * (0.25 + i * 0.2);
+                        });
+                    }
+                });
 
-            kapsayici.innerHTML = svg +
-                '<div class="yan-el-aciklama">' +
-                (sagMi ? 'SAĞ EL<br>J K L Ş + H' : 'SOL EL<br>A S D F + G') +
-                '</div>';
+                cizici.render(sahne, kamera);
+            }
+            animate();
+
+            return {
+                parmakObjeleri: parmakObjeleri,
+                boyutlandir: boyut
+            };
         }
 
-        /* Sıradaki harfe göre parmağı vurgula */
+        /* El kurulumu (Three.js yüklenince çağrılır) */
+        function elCiz(elKodu) {
+            if (!three3D.yuklu) return;
+            const id = elKodu === 'L' ? 'solElKapsayici' : 'sagElKapsayici';
+            if (!three3D[elKodu]) three3D[elKodu] = elSahnesiKur(elKodu, id);
+        }
+
+        /* Sıradaki harfe göre 3B parmağı oynat */
         function elleriGuncelle(siradakiHarf) {
-            document.querySelectorAll('.el-parmak').forEach(function (pr) {
-                pr.style.fill = '';
-                pr.style.transform = '';
-                pr.style.transition = 'all 0.18s ease';
-                pr.style.filter = '';
+            if (!three3D.yuklu) return;
+
+            /* Herkesi sıfırla */
+            ['L', 'R'].forEach(function (elK) {
+                if (!three3D[elK]) return;
+                Object.keys(three3D[elK].parmakObjeleri).forEach(function (kod) {
+                    const pr = three3D[elK].parmakObjeleri[kod];
+                    pr.hedef = 0;
+                    pr.segler.forEach(function (s) { s.material = pr.malzeme; });
+                    pr.eklemler.forEach(function (e) { e.material = pr.malzeme; });
+                });
             });
             if (!siradakiHarf) return;
 
@@ -991,20 +1073,48 @@
             }
             if (!kod) return;
 
-            const hedef = document.querySelector('.el-parmak[data-kod="' + kod + '"]');
-            if (hedef) {
-                hedef.style.fill = PARMAK_RENKLERI[kod.slice(0, 2)];
-                hedef.style.filter = 'brightness(1.12)';
-                hedef.style.transform = 'translateY(5px)';
-            }
+            const elK = kod[0];
+            const pr = three3D[elK] && three3D[elK].parmakObjeleri[kod];
+            if (!pr) return;
+            pr.hedef = 1;
+
+            /* Parmak rengi */
+            const renk = new THREE.MeshStandardMaterial({
+                color: PARMAK_RENKLERI[kod.slice(0, 2)],
+                roughness: 0.35,
+                emissive: PARMAK_RENKLERI[kod.slice(0, 2)],
+                emissiveIntensity: 0.3
+            });
+            pr.segler.forEach(function (s) { s.material = renk; });
+            pr.eklemler.forEach(function (e) { e.material = renk; });
         }
 
         /* Geriye dönük uyumluluk */
         function elEtiketleriniSabitle() {}
 
-        /* Elleri hemen çiz */
-        elCiz('L');
-        elCiz('R');
+        /* Three.js yükle */
+        (function threeYukle() {
+            const sc = document.createElement('script');
+            sc.src = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js';
+            sc.onload = function () {
+                three3D.yuklu = true;
+                elCiz('L');
+                elCiz('R');
+                /* yükleme sonrası mevcut harfi uygula */
+                try {
+                    const g = durum.akis && durum.akis[durum.index];
+                    if (g && g !== ' ') klavyeVurgula(g[durum.yazilan.length]);
+                } catch (h) {}
+                window.addEventListener('resize', function () {
+                    if (three3D.L) three3D.L.boyutlandir();
+                    if (three3D.R) three3D.R.boyutlandir();
+                });
+            };
+            sc.onerror = function () { /* CDN yoksa eller çizilmez, site çalışır */ };
+            document.head.appendChild(sc);
+        })();
+
+        /* HTML yorum etiketleri (eller JS ile çizilir) */
         /* =====================================================
            7e) DERS MODU MOTORU
            -----------------------------------------------------

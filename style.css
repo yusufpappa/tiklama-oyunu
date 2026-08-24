@@ -767,18 +767,19 @@
             min-width: 0;
         }
 
-        /* ===== YAN ELLER (2B net el içi çizimi) ===== */
+        /* ===== YAN ELLER (3D Three.js) ===== */
         .yan-el {
-            flex: 0 0 170px;
+            flex: 0 0 175px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 3px;
         }
 
-        .yan-el svg {
-            width: 100%;
-            height: auto;
+        .yan-el canvas {
+            border-radius: 12px;
+            background: radial-gradient(ellipse at 50% 30%, #1d222c 0%, #141820 75%);
+            border: 1px solid var(--kenarlik);
             display: block;
         }
 
