@@ -884,10 +884,11 @@
             const kapsayici = document.getElementById(kapsayiciId);
 
             const sahne = new THREE.Scene();
-            const kamera = new THREE.PerspectiveCamera(30, 0.62, 0.1, 30);
-            /* Kamera: avucu tam çerçeveler, parmaklar TAM SIĞAR */
-            kamera.position.set(0, 1.05, 5.6);
-            kamera.lookAt(0, 0.45, 0);
+            const kamera = new THREE.PerspectiveCamera(26, 0.68, 0.1, 30);
+            /* Kamera: TAM ÖNDEN, hafif yukarıdan — el içi düz görünür,
+               tüm parmaklar ve avuç ekrana net sığar (görseldeki gibi) */
+            kamera.position.set(0, 1.15, 6.4);
+            kamera.lookAt(0, 0.62, 0);
 
             const cizici = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             cizici.setPixelRatio(window.devicePixelRatio);
@@ -917,8 +918,9 @@
 
             const elGrup = new THREE.Group();
             if (elKodu === 'R') elGrup.scale.x = -1;
-            /* Hafif el içi görünümü: kameraya dön */
-            elGrup.rotation.x = 0.5;
+            /* El içi TAM KAMERAYA BAKAR: öne 75° dönük, çok hafif yana */
+            elGrup.rotation.x = 1.18;
+            elGrup.rotation.y = -0.06;
             sahne.add(elGrup);
 
             /* Avuç: yassı yuvarlak kutu (RoundedBox benzeri: küre+ölçek) */
