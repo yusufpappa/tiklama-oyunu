@@ -860,41 +860,94 @@
 
         /* =====================================================
         /* =====================================================
-           7e) YAN ELLER — THREE.JS 3D ELLER
+           7e) YAN ELLER — THREE.JS GERÇEKÇİ 3D ELLER
            -----------------------------------------------------
-           Gerçekçi 3B eller: tam sığan uzun parmaklar, belirgin
-           başparmak ve serçe, boğumlu kapsül parmaklar, yumuşak
-           ışık. Sıradaki harfin parmağı renklenir ve basar.
+           Avuç içe bakar (kameraya dönük). 5 parmak gerçek el
+           anatomisiyle: her parmak 3 boğum + 4 eklem, uca doğru
+           incelir, uç boğumu hafif kıvrık. Başparmak avuç
+           kenarından doğal açıyla ayrılır. Parmaklar avuç
+           düzleminde hafif yay yapar (gerçek eller gibi).
            ===================================================== */
         let three3D = { yuklu: false };
 
-        /* Parmak: uzunluk, x-ofset, eğim, kalınlık.
-           Serçe kısa+ince (belirgin), başparmak ayrı çizilir. */
+        /* Parmak ölçüleri (gerçek el oranları, birim ~avuç genişliği)
+           uz: toplam parmak uzunluğu, x: avuçtan çıkış noktası,
+           k: taban kalınlığı, yay: parmakların kavis farkı */
         const PARM3D = {
-            L0: { uz: 1.00, x: -0.86, aci: 0.26, k: 0.150 },   // serçe: kısa, ince
-            L1: { uz: 1.22, x: -0.30, aci: 0.10, k: 0.170 },   // yüzük
-            L2: { uz: 1.34, x:  0.20, aci: 0.00, k: 0.178 },   // orta: en uzun
-            L3: { uz: 1.28, x:  0.68, aci: -0.10, k: 0.174 }   // işaret
+            L0: { uz: 0.98, x: -0.84, k: 0.135, yay: 0.30 },   // serçe: kısa, ince, dışa yay
+            L1: { uz: 1.24, x: -0.30, k: 0.158, yay: 0.10 },   // yüzük: uzun
+            L2: { uz: 1.34, x:  0.18, k: 0.168, yay: 0.00 },   // orta: en uzun, tepe
+            L3: { uz: 1.22, x:  0.64, k: 0.162, yay: -0.10 }   // işaret: biraz kısa
         };
 
-        const EL_EV_HARF3D = { L: ['A', 'S', 'D', 'F'], R: ['Ş', 'L', 'K', 'J'] };
+        /* Bir parmağı 3 boğum + eklemlerle üretir; animasyon
+           için kök/orta/uç menteşe grupları döndürür. */
+        function parmakUret(parent, t, malzeme, tirnakM) {
+            /* Boğum oranları (gerçek): %36 / %33 / %26 + eklemler */
+            const oranlar = [0.36, 0.33, 0.26];
+            const kalin = [t.k, t.k * 0.88, t.k * 0.76];
 
-        /* Bir el sahnesi kurar */
+            const kok = new THREE.Group();          /* avuca bağlanan kök */
+            parent.add(kok);
+
+            /* Segmentler ve menteşeler zinciri:
+               kok -> seg1 -> mentese2 -> seg2 -> mentese3 -> seg3 */
+            let uc = kok;
+            const segler = [], menteseler = [kok], eklemler = [];
+
+            for (let s = 0; s < 3; s++) {
+                const seg = new THREE.Mesh(
+                    new THREE.CapsuleGeometry(kalin[s], t.uz * oranlar[s], 8, 16), malzeme);
+                seg.position.y = t.uz * oranlar[s] / 2 + kalin[s] * 0.42;
+                uc.add(seg);
+                segler.push(seg);
+
+                /* eklem küresi (boğum başı) */
+                const eklem = new THREE.Mesh(
+                    new THREE.SphereGeometry(kalin[s] * 1.0, 14, 12), malzeme);
+                eklem.position.y = seg.position.y + t.uz * oranlar[s] / 2 + kalin[s] * 0.38;
+                uc.add(eklem);
+                eklemler.push(eklem);
+
+                /* sonraki segment için menteşe */
+                if (s < 2) {
+                    const mentese = new THREE.Group();
+                    mentese.position.y = eklem.position.y;
+                    uc.add(mentese);
+                    menteseler.push(mentese);
+                    uc = mentese;
+                } else {
+                    /* uç: parmak ucu küresi + tırnak */
+                    const parmakUcu = new THREE.Mesh(
+                        new THREE.SphereGeometry(kalin[2] * 0.92, 14, 12), malzeme);
+                    parmakUcu.position.y = eklem.position.y + kalin[2] * 0.55;
+                    uc.add(parmakUcu);
+                    eklemler.push(parmakUcu);
+
+                    const tirnak = new THREE.Mesh(
+                        new THREE.BoxGeometry(kalin[2] * 1.35, kalin[2] * 0.38, kalin[2] * 1.75), tirnakM);
+                    tirnak.position.set(0, eklem.position.y + kalin[2] * 0.3, kalin[2] * 0.85);
+                    tirnak.rotation.x = -0.4;
+                    uc.add(tirnak);
+                }
+            }
+            return { kok: kok, segler: segler, menteseler: menteseler, eklemler: eklemler };
+        }
+
+        /* El sahnesi kurar: avuç içi KAMERAYA bakar */
         function elSahnesiKur(elKodu, kapsayiciId) {
             const kapsayici = document.getElementById(kapsayiciId);
 
             const sahne = new THREE.Scene();
-            const kamera = new THREE.PerspectiveCamera(26, 0.68, 0.1, 30);
-            /* Kamera: TAM ÖNDEN, hafif yukarıdan — el içi düz görünür,
-               tüm parmaklar ve avuç ekrana net sığar (görseldeki gibi) */
-            kamera.position.set(0, 1.15, 6.4);
-            kamera.lookAt(0, 0.62, 0);
+            const kamera = new THREE.PerspectiveCamera(24, 0.66, 0.1, 30);
+            kamera.position.set(0, 1.3, 7.0);
+            kamera.lookAt(0, 0.55, 0);
 
             const cizici = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             cizici.setPixelRatio(window.devicePixelRatio);
             const boyut = function () {
-                const w = kapsayici.clientWidth || 170;
-                const h = Math.round(w * 1.55);
+                const w = kapsayici.clientWidth || 175;
+                const h = Math.round(w * 1.5);
                 cizici.setSize(w, h);
                 kamera.aspect = w / h;
                 kamera.updateProjectionMatrix();
@@ -903,133 +956,117 @@
             boyut();
             kapsayici.insertBefore(cizici.domElement, kapsayici.firstChild);
 
-            /* Işıklar */
-            sahne.add(new THREE.AmbientLight(0xffffff, 0.62));
-            const isik1 = new THREE.DirectionalLight(0xfff0dd, 1.15);
+            /* Işıklar: sıcak ana + serin dolgu + alttan hafif */
+            sahne.add(new THREE.AmbientLight(0xffffff, 0.58));
+            const isik1 = new THREE.DirectionalLight(0xfff0dd, 1.1);
             isik1.position.set(2.5, 3.5, 4.5);
             sahne.add(isik1);
-            const isik2 = new THREE.DirectionalLight(0xa8c4ff, 0.4);
+            const isik2 = new THREE.DirectionalLight(0xa8c4ff, 0.42);
             isik2.position.set(-3, 1.5, 2.5);
             sahne.add(isik2);
+            const isik3 = new THREE.DirectionalLight(0xffd9c0, 0.25);
+            isik3.position.set(0, -2, 3);
+            sahne.add(isik3);
 
-            /* Malzemeler */
             const ten = new THREE.MeshStandardMaterial({ color: 0xE8B48C, roughness: 0.55, metalness: 0.03 });
-            const tirnakM = new THREE.MeshStandardMaterial({ color: 0xF6E3D0, roughness: 0.3 });
+            const tirnakM = new THREE.MeshStandardMaterial({ color: 0xF6E3D0, roughness: 0.28 });
 
             const elGrup = new THREE.Group();
             if (elKodu === 'R') elGrup.scale.x = -1;
-            /* El içi TAM KAMERAYA BAKAR: öne 75° dönük, çok hafif yana */
-            elGrup.rotation.x = 1.18;
-            elGrup.rotation.y = -0.06;
+            /* AVUÇ İÇİ kameraya tam bakar */
+            elGrup.rotation.x = 1.35;
+            elGrup.rotation.y = -0.04;
             sahne.add(elGrup);
 
-            /* Avuç: yassı yuvarlak kutu (RoundedBox benzeri: küre+ölçek) */
-            const avuc = new THREE.Mesh(new THREE.SphereGeometry(1.05, 30, 24), ten);
-            avuc.scale.set(1.12, 0.72, 1.05);
-            avuc.position.y = 0.1;
+            /* --- AVUÇ: gerçek avuç formu (Lathe ile organik) --- */
+            /* Yassı, parmaklara doğru genişleyen, bileğe daralan */
+            const avucSekli = new THREE.Shape();
+            avucSekli.moveTo(-0.92, 0.55);                       /* parmak tarafı sol */
+            avucSekli.bezierCurveTo(-1.04, 0.15, -1.06, -0.3, -0.88, -0.62);
+            avucSekli.bezierCurveTo(-0.6, -0.8, 0.6, -0.8, 0.88, -0.62);   /* bilek */
+            avucSekli.bezierCurveTo(1.06, -0.3, 1.04, 0.15, 0.92, 0.55);  /* sağ kenar */
+            avucSekli.bezierCurveTo(0.6, 0.72, -0.6, 0.72, -0.92, 0.55);  /* üst (parmak dipleri) */
+            const avucGeo = new THREE.ExtrudeGeometry(avucSekli, {
+                depth: 0.34, bevelEnabled: true, bevelThickness: 0.12,
+                bevelSize: 0.12, bevelSegments: 4, curveSegments: 24
+            });
+            avucGeo.rotateX(-Math.PI / 2);      /* yatay: XZ düzleminde dur */
+            const avuc = new THREE.Mesh(avucGeo, ten);
+            avuc.position.y = -0.15;
             elGrup.add(avuc);
 
-            /* Bilek: silindir, avuçtan aşağı */
-            const bilek = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.68, 1.5, 22), ten);
-            bilek.position.y = -0.95;
+            /* --- BİLEK --- */
+            const bilek = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.56, 1.1, 22), ten);
+            bilek.position.set(0, -0.78, 0.02);
             elGrup.add(bilek);
 
             const parmakObjeleri = {};
 
-            /* 4 parmak: 3 boğumlu — kök, orta, uç (uç en ince) */
+            /* --- 4 PARMAK: avuç üst kenarından, hafif yay ile --- */
             [0, 1, 2, 3].forEach(function (pNo) {
                 const t = PARM3D['L' + pNo];
                 const kod = elKodu + pNo;
+                const y = 0.62;
 
-                const kok = new THREE.Group();
-                kok.position.set(t.x, 0.72, 0.12);
-                kok.rotation.z = t.aci;
-                elGrup.add(kok);
+                const tutucu = new THREE.Group();
+                tutucu.position.set(t.x, y, 0.1);
+                elGrup.add(tutucu);
 
-                /* Boğum küreleri (eklem) + kapsül segmentler */
-                const segUz = [t.uz * 0.42, t.uz * 0.34, t.uz * 0.24];   // kök->uç
-                const kalinlik = [t.k, t.k * 0.9, t.k * 0.78];
+                const pr = parmakUret(tutucu, t, ten, tirnakM);
 
-                let yToplam = 0;
-                const eklemler = [];
-                for (let s = 0; s < 3; s++) {
-                    const seg = new THREE.Mesh(
-                        new THREE.CapsuleGeometry(kalinlik[s], segUz[s], 6, 14), ten);
-                    seg.position.y = yToplam + segUz[s] / 2 + kalinlik[s] * 0.3;
-                    kok.add(seg);
-                    yToplam = seg.position.y + segUz[s] / 2 + kalinlik[s] * 0.25;
-
-                    /* eklem küresi */
-                    const eklem = new THREE.Mesh(new THREE.SphereGeometry(kalinlik[s] * 0.98, 12, 10), ten);
-                    eklem.position.y = yToplam;
-                    kok.add(eklem);
-                    eklemler.push(eklem);
-                }
-
-                /* Tırnak: uçta hafif eğik */
-                const tirnak = new THREE.Mesh(
-                    new THREE.BoxGeometry(kalinlik[2] * 1.5, kalinlik[2] * 0.5, kalinlik[2] * 2.0), tirnakM);
-                tirnak.position.set(0, yToplam + kalinlik[2] * 0.4, kalinlik[2] * 0.7);
-                tirnak.rotation.x = -0.35;
-                kok.add(tirnak);
+                /* Parmak doğal yayı: kökten hafif dışa/öne eğim;
+                   uç boğum az daha kıvrık (gerçek el dinlenme pozu) */
+                pr.kok.rotation.z = -t.yay * 0.5;
+                pr.menteseler[1].rotation.z = -t.yay * 0.35;
+                pr.menteseler[2].rotation.z = -t.yay * 0.2;
+                pr.menteseler[1].rotation.x = 0.10;   /* orta boğum hafif içe */
+                pr.menteseler[2].rotation.x = 0.16;   /* uç boğum daha kıvrık */
 
                 parmakObjeleri[kod] = {
-                    kok: kok, segler: kok.children.filter(c => c.geometry && c.geometry.type === 'CapsuleGeometry'),
-                    eklemler: eklemler, tirnak: tirnak,
-                    egim: 0, hedef: 0, malzeme: ten
+                    kok: pr.kok, segler: pr.segler, menteseler: pr.menteseler,
+                    eklemler: pr.eklemler, egim: 0, hedef: 0, malzeme: ten,
+                    tabanYay: t.yay
                 };
             });
 
-            /* BAŞPARMAK: belirgin — kıvrık, kalın, avucun yanında */
+            /* --- BAŞPARMAK: gerçek konum — avucun alt kenarından,
+                   kıvrık, C şeklinde, içe dönük --- */
             const bp = new THREE.Group();
-            bp.position.set(-0.95, 0.15, 0.35);
-            bp.rotation.z = 1.05;          /* dışa doğru yatık */
-            bp.rotation.y = 0.4;           /* hafif öne dönük */
+            bp.position.set(-0.78, -0.18, 0.22);
+            bp.rotation.set(0.25, 0.75, -0.85);   /* dışa + öne + yana açılı */
             elGrup.add(bp);
 
-            const bpKalin = 0.185;
-            const bp1 = new THREE.Mesh(new THREE.CapsuleGeometry(bpKalin, 0.5, 6, 14), ten);
-            bp1.position.y = 0.32;
-            bp.add(bp1);
-            const bpEklem = new THREE.Mesh(new THREE.SphereGeometry(bpKalin * 0.98, 12, 10), ten);
-            bpEklem.position.y = 0.66;
-            bp.add(bpEklem);
-            const bp2 = new THREE.Mesh(new THREE.CapsuleGeometry(bpKalin * 0.82, 0.36, 6, 14), ten);
-            bp2.position.y = 0.94;
-            bp.add(bp2);
-            const bpUc = new THREE.Mesh(new THREE.SphereGeometry(bpKalin * 0.8, 12, 10), ten);
-            bpUc.position.y = 1.18;
-            bp.add(bpUc);
-            const bpTirnak = new THREE.Mesh(
-                new THREE.BoxGeometry(bpKalin * 1.4, bpKalin * 0.5, bpKalin * 1.8), tirnakM);
-            bpTirnak.position.set(0, 1.14, bpKalin * 0.65);
-            bpTirnak.rotation.x = -0.35;
-            bp.add(bpTirnak);
+            /* 2 boğum: kalın taban + ince uç, hafif C kıvrımı */
+            const bpTanim = { uz: 0.92, k: 0.185 };
+            const bpr = parmakUret(bp, bpTanim, ten, tirnakM);
+            bpr.kok.rotation.z = -0.28;
+            bpr.menteseler[1].rotation.z = -0.42;   /* daha kıvrık */
+            bpr.menteseler[2].rotation.z = -0.30;
 
             parmakObjeleri[elKodu + 'TB'] = {
-                kok: bp, segler: [bp1, bp2], eklemler: [bpEklem, bpUc], tirnak: bpTirnak,
-                egim: 0, hedef: 0, malzeme: ten
+                kok: bpr.kok, segler: bpr.segler, menteseler: bpr.menteseler,
+                eklemler: bpr.eklemler, egim: 0, hedef: 0, malzeme: ten,
+                basparmak: true
             };
 
-            /* Animasyon döngüsü */
-            let zaman = 0;
+            /* Animasyon */
             function animate() {
                 requestAnimationFrame(animate);
-                zaman += 0.016;
 
                 Object.keys(parmakObjeleri).forEach(function (kod) {
                     const pr = parmakObjeleri[kod];
-                    pr.egim += (pr.hedef - pr.egim) * 0.16;
+                    pr.egim += (pr.hedef - pr.egim) * 0.15;
 
-                    if (kod.endsWith('TB')) {
-                        /* başparmak: içe doğru kapanır */
-                        pr.kok.rotation.y = 0.4 - pr.egim * 0.55;
+                    if (pr.basparmak) {
+                        /* Başparmak: avuca doğru kapanır */
+                        pr.kok.rotation.y = 0.75 - pr.egim * 0.45;
+                        pr.menteseler[1].rotation.x = 0.10 + pr.egim * 0.35;
                     } else {
-                        /* parmak: kökten öne katlanır */
-                        pr.kok.rotation.x = pr.egim * 0.5;
-                        pr.segler.forEach(function (seg, i) {
-                            seg.rotation.x = pr.egim * (0.25 + i * 0.2);
-                        });
+                        /* Parmak: 3 boğum kademeli katlanır
+                           (gerçek tutma hareketi: kök az, uç çok) */
+                        pr.kok.rotation.x = pr.egim * 0.35;
+                        pr.menteseler[1].rotation.x = 0.10 + pr.egim * 0.55;
+                        pr.menteseler[2].rotation.x = 0.16 + pr.egim * 0.75;
                     }
                 });
 
@@ -1037,10 +1074,7 @@
             }
             animate();
 
-            return {
-                parmakObjeleri: parmakObjeleri,
-                boyutlandir: boyut
-            };
+            return { parmakObjeleri: parmakObjeleri, boyutlandir: boyut };
         }
 
         /* El kurulumu (Three.js yüklenince çağrılır) */
